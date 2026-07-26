@@ -203,9 +203,19 @@ def main() -> int:
     )
     print("  wrote social-preview.png")
 
-    # Per-frame delays in centiseconds. The total is 4.6s, under
-    # the 5s threshold in WCAG 2.2.2, and the GIF carries no
-    # NETSCAPE block so it plays once and stops.
+    # Per-frame delays in centiseconds; one cycle is 4.6s.
+    #
+    # The demo loops. An earlier version played once, which is
+    # clean against WCAG 2.2.2 and useless in practice: a README
+    # GIF starts on page load and is finished before a reader has
+    # scrolled to it, so it reads as a static screenshot.
+    #
+    # Looping motion exceeds the 5s threshold in 2.2.2, so this
+    # is a deliberate trade rather than a conformance claim. The
+    # mitigation is the poster: README.md wraps the GIF in a
+    # <picture> whose prefers-reduced-motion source serves
+    # demo-poster.png, so a reader who has asked their OS for
+    # less motion gets the still frame instead.
     delays = ["100", "80", "120", "160"]
     args = ["magick"]
     for delay, index in zip(delays, range(1, len(FRAMES) + 1)):
@@ -216,7 +226,7 @@ def main() -> int:
     ]
     subprocess.run(args, check=True, capture_output=True)
     subprocess.run(
-        ["magick", str(OUT / "raw.gif"), "-loop", "1",
+        ["magick", str(OUT / "raw.gif"), "-loop", "0",
          str(ASSETS / "demo.gif")],
         check=True, capture_output=True,
     )

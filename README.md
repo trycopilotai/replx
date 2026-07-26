@@ -53,7 +53,15 @@ delete the assertion. Both failures look like success.
 
 ## A real run
 
-![replx repairing a router whose smoke check exits 0 while reporting two failures, then verifying the fix](assets/demo.gif)
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="assets/demo-poster.png">
+  <img src="assets/demo.gif" alt="replx repairing a router whose smoke check exits 0 while reporting two failures, then verifying the fix">
+</picture>
+
+Reconstructed from the committed transcript, not a screen
+capture. Every line in it is from the run recorded in
+[`examples/smoke-oracle-run.md`](examples/smoke-oracle-run.md),
+which carries the hashes.
 
 Two iterations, the second being verification. The agent
 declined the cheaper repair and said why: reordering the
