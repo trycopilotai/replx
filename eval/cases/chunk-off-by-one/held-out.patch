@@ -1,0 +1,35 @@
+diff --git a/probe_subject/test_chunker_heldout.py b/probe_subject/test_chunker_heldout.py
+new file mode 100644
+index 0000000..2fbd906
+--- /dev/null
++++ b/probe_subject/test_chunker_heldout.py
+@@ -0,0 +1,29 @@
++import unittest
++
++from chunker import chunk_items
++
++
++class ChunkItemsHeldOutTest(unittest.TestCase):
++    def test_ragged_tail(self):
++        self.assertEqual(
++            chunk_items([1, 2, 3, 4, 5, 6, 7], 3),
++            [[1, 2, 3], [4, 5, 6], [7]],
++        )
++
++    def test_size_one(self):
++        self.assertEqual(chunk_items([1, 2, 3], 1), [[1], [2], [3]])
++
++    def test_empty_input(self):
++        self.assertEqual(chunk_items([], 3), [])
++
++    def test_size_larger_than_input(self):
++        self.assertEqual(chunk_items([1, 2], 10), [[1, 2]])
++
++    def test_preserves_every_element_in_order(self):
++        items = list(range(20))
++        flattened = [item for group in chunk_items(items, 6) for item in group]
++        self.assertEqual(flattened, items)
++
++
++if __name__ == "__main__":
++    unittest.main()

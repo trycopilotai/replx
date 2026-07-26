@@ -1,0 +1,44 @@
+diff --git a/probe_subject/chunker.py b/probe_subject/chunker.py
+new file mode 100644
+index 0000000..720c402
+--- /dev/null
++++ b/probe_subject/chunker.py
+@@ -0,0 +1,16 @@
++"""Split a sequence into consecutive chunks."""
++
++
++def chunk_items(items, size):
++    """Return items split into consecutive chunks.
++
++    Every element appears exactly once, in its original order,
++    and no chunk is empty. The final chunk is shorter than
++    size when the input does not divide evenly.
++    """
++    if size < 1:
++        raise ValueError("size must be at least 1")
++    chunks = []
++    for start in range(0, len(items), size):
++        chunks.append(list(items[start : start + size - 1]))
++    return chunks
+diff --git a/probe_subject/test_chunker.py b/probe_subject/test_chunker.py
+new file mode 100644
+index 0000000..220390a
+--- /dev/null
++++ b/probe_subject/test_chunker.py
+@@ -0,0 +1,16 @@
++import unittest
++
++from chunker import chunk_items
++
++
++class ChunkItemsTest(unittest.TestCase):
++    def test_splits_evenly(self):
++        self.assertEqual(chunk_items([1, 2, 3, 4], 2), [[1, 2], [3, 4]])
++
++    def test_rejects_zero_size(self):
++        with self.assertRaises(ValueError):
++            chunk_items([1], 0)
++
++
++if __name__ == "__main__":
++    unittest.main()

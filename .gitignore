@@ -1,0 +1,22 @@
+# Editor and OS noise
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Harness output. Every run writes prompts, diffs, and command
+# transcripts here. Commit a run deliberately, not by accident.
+eval/out/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Never commit these
+.env
+.env.*
