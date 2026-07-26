@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="replx: a repair loop with a checkpoint it has to pass">
+  <rect width="512" height="512" rx="112" fill="#0d1117"/>
+  <rect x="4" y="4" width="504" height="504" rx="108" fill="none" stroke="#30363d" stroke-width="8"/>
+  <path d="M 256 106 A 150 150 0 1 1 106 256" fill="none" stroke="#3fb950" stroke-width="40" stroke-linecap="butt"/>
+  <path d="M 106 186 L 148 262 L 64 262 Z" fill="#3fb950"/>
+  <circle cx="150" cy="150" r="30" fill="#d29922"/>
+</svg>
