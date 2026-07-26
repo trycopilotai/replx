@@ -4,13 +4,13 @@
 
 <h1 align="center">replx</h1>
 
-<p align="center"><strong>A repair loop that does not accept exit 0 as proof.</strong></p>
+<p align="center"><strong>A repair loop that does not assume exit 0 means success.</strong></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license">
   <img src="https://img.shields.io/badge/dependencies-none-brightgreen.svg" alt="No dependencies">
   <img src="https://img.shields.io/badge/install-one%20markdown%20file-blue.svg" alt="One markdown file">
-  <img src="https://img.shields.io/badge/oracle-not%20the%20exit%20status-8957e5.svg" alt="The oracle is not the exit status">
+  <img src="https://img.shields.io/badge/oracle-declared%2C%20not%20assumed-8957e5.svg" alt="The oracle is declared, not assumed">
 </p>
 
 `replx` drives a failing command to green in bounded
@@ -42,7 +42,7 @@ $ echo $?
 ```
 
 Any loop whose condition is `$? == 0` is already finished,
-with every request misrouted. That is not a contrived
+with two of the three routes broken. That is not a contrived
 script. Health checks, smoke suites, and deploy verifiers
 behave this way constantly, because they are written to
 report rather than to gate.
@@ -55,11 +55,12 @@ delete the assertion. Both failures look like success.
 
 ![replx repairing a router whose smoke check exits 0 while reporting two failures, then verifying the fix](assets/demo.gif)
 
-One iteration. The agent also declined the cheaper repair
-and said why: reordering the route table turns the check
-green, but it leaves first-match semantics under a comment
-promising longest-prefix, so any later append can silently
-shadow an existing route. It changed the lookup instead.
+Two iterations, the second being verification. The agent
+declined the cheaper repair and said why: reordering the
+route table turns the check green, but it leaves first-match
+semantics under a comment promising longest-prefix, so any
+later append can silently shadow an existing route. It
+changed the lookup instead.
 
 Transcript, input, and run manifest:
 [`examples/smoke-oracle-run.md`](examples/smoke-oracle-run.md).
@@ -107,14 +108,14 @@ install, restart the session so it gets picked up.
 
 ## What it does differently
 
-| A loop around an agent CLI                     | `replx`                                                                  |
-| ---------------------------------------------- | ------------------------------------------------------------------------ |
-| Success is the exit status                     | Success is a condition you declare, and it can be a line of output       |
-| Retries the same state                         | One run per iteration, never wrapped in `until` or `while`               |
-| A passing command ends the run                 | A passing command that weakened a test is a failure with its own name    |
-| Needs a runner installed                       | One Markdown file, read by the agent you already have                    |
-| Lint, build, and test cost the same every pass | Lint drops out once clean, and lint-only edits checkpoint separately     |
-| Reports green                                  | Reports the condition met, or an honest unsolved with what was ruled out |
+| A loop around an agent CLI                     | `replx`                                                                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Success is the exit status                     | Success is a condition you declare, and it can be a line of output                             |
+| Retries the same state                         | One run per iteration, never wrapped in `until` or `while`                                     |
+| A passing command ends the run                 | The protocol forbids the repairs that buy a pass, and the harness scores them as `bad_success` |
+| Needs a runner installed                       | One Markdown file, read by the agent you already have                                          |
+| Lint, build, and test cost the same every pass | Lint drops out once clean, and lint-only edits checkpoint separately                           |
+| Reports green                                  | Reports the condition met, or an honest unsolved with what was ruled out                       |
 
 ## The repairs that do not count
 
@@ -146,7 +147,7 @@ command pass without fixing the defect is recorded as
 reachable when this was built.
 [`eval/RESULTS.md`](eval/RESULTS.md) says so at the top
 rather than in a footnote. What is verified is the
-instrument: 13 offline tests, no network and no model
+instrument: 15 offline tests, no network and no model
 required.
 
 ```sh
@@ -210,8 +211,14 @@ replx/
   skill/SKILL.md        the protocol
   examples/             the fixture and a real run with its manifest
   eval/                 the harness, its cases, and its results
-  assets/               logo and demo
+  assets/               logo and demo, regenerate with build.py
 ```
+
+The demo and the social preview are generated, not hand
+made. `python3 assets/build.py` rebuilds them, which needs
+headless Chrome and ImageMagick. Every text tone in them is
+checked against 4.5:1 on the background, and the GIF plays
+once.
 
 ## Contributing
 

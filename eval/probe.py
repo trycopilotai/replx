@@ -3,10 +3,10 @@
 """Score a model's repair of a seeded defect, with an oracle
 that is not the exit status.
 
-The harness replays one case: create a worktree at a known
-ref, apply a patch that seeds a defect, confirm the target
-command fails, then ask a model for a unified diff, apply it,
-and re-run. That much is ordinary.
+The harness replays one case: build a sandbox at a known ref,
+apply a patch that seeds a defect, confirm the target command
+fails, then ask a model for a unified diff, apply it, and
+re-run. That much is ordinary.
 
 What this harness adds is what happens when the command
 starts passing. Passing is treated as a claim, not a result.

@@ -17,7 +17,8 @@ they are the ones to keep working:
 
 The first proves a passing command is not accepted as a
 result. The second proves the harness does not hand over the
-answer, which is the defect the original this was ported from shipped with.
+answer, which is the defect in the original this was
+ported from.
 """
 
 from __future__ import annotations
@@ -425,6 +426,59 @@ class ProbeTest(unittest.TestCase):
 
             shutil.rmtree(worktree, ignore_errors=True)
 
+    def test_sandbox_has_no_history_to_read_the_answer_from(self) -> None:
+        """The pre-defect code must not be recoverable from git.
+
+        A worktree would carry the parent commit, and the parent
+        is the state before the defect was seeded, so `git diff`,
+        `git log -p`, and `git show` would each hand over the
+        original correct code. The sandbox is a history-free
+        export with the defect as its root commit instead. This
+        asserts that directly, rather than trusting the
+        construction.
+        """
+        holder = self.make_repo()
+        with holder:
+            root = Path(holder.name)
+            case = PROBE.load_case(
+                root / "eval" / "cases" / "add" / "case.json"
+            )
+            sandbox = PROBE.create_case_sandbox(
+                root, case, root / "out" / "work", "probe"
+            )
+
+            def git(*args: str) -> str:
+                return subprocess.run(
+                    ["git", *args],
+                    cwd=str(sandbox),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                ).stdout
+
+            # Exactly one commit, so there is no parent to diff.
+            self.assertEqual(git("rev-list", "--count", "HEAD").strip(), "1")
+            self.assertEqual(git("log", "--format=%P").strip(), "")
+
+            # The correct implementation must appear nowhere in
+            # any object git can reach, and the working tree must
+            # hold the defect rather than the fix.
+            correct = "return a + b"
+            self.assertNotIn(correct, git("log", "-p", "--all"))
+            self.assertNotIn(correct, git("show", "HEAD"))
+            self.assertNotIn(correct, git("diff"))
+            self.assertNotIn(correct, git("diff", "HEAD"))
+            self.assertIn(
+                "return a - b",
+                (sandbox / "subject" / "calc.py").read_text(),
+            )
+
+            # And a clean tree at the start, so the first diff the
+            # model is shown contains only its own edits.
+            self.assertEqual(git("status", "--porcelain").strip(), "")
+
+            shutil.rmtree(sandbox, ignore_errors=True)
+
     # --- ported behaviour ---
 
     def test_successful_one_iteration_patch(self) -> None:
@@ -584,6 +638,43 @@ class ProbeTest(unittest.TestCase):
         self.assertTrue(result["post_checks"])
         self.assertTrue(all(c["passed"] for c in result["post_checks"]))
         self.assertFalse(result["guard_failed"])
+
+    def test_run_manifest_matches_the_shipped_protocol(self) -> None:
+        """The committed transcript must cite the live protocol.
+
+        A transcript's manifest is the only thing making it
+        checkable rather than decorative, and a manifest goes
+        stale the moment the protocol is reformatted. Editing
+        prose is a normal thing to do; noticing that it
+        invalidated a hash four files away is not, so this
+        asserts it instead of relying on anyone remembering.
+        """
+        import hashlib
+        import re
+
+        root = Path(__file__).resolve().parent.parent
+        protocol = root / "skill" / "SKILL.md"
+        transcript = root / "examples" / "smoke-oracle-run.md"
+
+        actual = hashlib.sha256(protocol.read_bytes()).hexdigest()
+        text = transcript.read_text(encoding="utf-8")
+
+        cited = re.search(
+            r"`skill/SKILL\.md`,\s*sha256\s*`([0-9a-f]+)", text
+        )
+        self.assertIsNotNone(
+            cited, "the run manifest does not cite a protocol sha256"
+        )
+        assert cited is not None
+        prefix = cited.group(1)
+        self.assertTrue(
+            actual.startswith(prefix),
+            "run manifest is stale: it cites %s… but skill/SKILL.md "
+            "hashes to %s…. Re-run the example against the current "
+            "protocol and update the manifest; do not just edit the "
+            "hash, because the transcript claims to be unedited output "
+            "of the protocol it names." % (prefix, actual[: len(prefix)]),
+        )
 
     def test_shipped_case_loads_and_declares_held_out_checks(self) -> None:
         """The case committed to this repo is valid."""

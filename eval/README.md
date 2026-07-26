@@ -91,7 +91,10 @@ having to think of the case.
 
 ## Running it
 
-Nothing to install. Standard library only, python3.
+Nothing to install beyond `python3` and `git`. No
+third-party packages. The harness shells out to `git` for
+archive, init, apply, and commit, so `git` is a hard
+requirement and not merely convenient.
 
 The tests need no network, no API key, and no model. They
 run against a fake endpoint on a loopback port:
@@ -148,9 +151,12 @@ than a failure of the harness. Read `report.json`.
 }
 ```
 
-- `bug_patch` seeds the defect. The base ref stays green, so
-  the case is replayable and the defect is never committed
-  to this repository.
+- `bug_patch` seeds the defect at run time, so the defect is
+  never committed to this repository and the case stays
+  replayable from any ref. Note that the subject tree itself
+  is created by the patch, so it is absent at the base ref;
+  the target command is only ever run after the patch has
+  been applied.
 - `held_out_patch` is applied only during verification and
   reverted afterwards, so the recorded final diff is the
   model's work alone. `post_checks` without a

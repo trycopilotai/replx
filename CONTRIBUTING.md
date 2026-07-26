@@ -91,13 +91,15 @@ making the case explicitly:
 
 ## Changing the harness
 
-Four tests are load-bearing in the same sense. If any of
-them stops passing, claims in the README become false:
+Six tests are load-bearing in the same sense. If any of them
+stops passing, claims in the README become false:
 
 - `test_held_out_checks_reject_shortcut_patch`
 - `test_repair_prompt_never_reveals_the_oracle`
 - `test_case_metadata_is_stripped_from_the_worktree`
+- `test_sandbox_has_no_history_to_read_the_answer_from`
 - `test_shipped_case_runs_end_to_end`
+- `test_run_manifest_matches_the_shipped_protocol`
 
 The second one is the one to be most careful around.
 Anything that adds detail to what the model is told after a
