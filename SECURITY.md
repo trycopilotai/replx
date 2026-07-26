@@ -1,0 +1,98 @@
+# Security
+
+This repository is not only a prompt. `eval/` applies
+model-authored patches and runs shell commands out of a case
+file, so it has a real threat model, and it is worth reading
+before you run it.
+
+## Run the harness in something disposable
+
+`eval/probe.py` does three things that deserve care:
+
+- It runs `case.command` and every entry in `post_checks`
+  **through a shell**, verbatim, from the case file.
+- It applies a **unified diff written by a language model**
+  with `git apply`.
+- It sends the contents of `context_files` to whatever
+  endpoint you point it at.
+
+The sandbox it builds is a `git archive` export in your
+output directory, which limits what a patch can touch by
+default, because `git apply` refuses paths outside the tree
+it is run in. It is **not** a security boundary. A case file
+is code execution by design.
+
+So: **treat a case file from anyone else as untrusted
+input.** Read `case.json`, `bug.patch`, and `held-out.patch`
+before running a case you did not write, the same way you
+would read a `Makefile` from a stranger. Run unfamiliar
+cases in a container or a VM, not on a machine with
+credentials on it.
+
+Do not point `--models` at an endpoint you do not control
+while running a case whose `context_files` include anything
+private. The contents of those files go into the request
+body.
+
+Keys are named, never inlined. `--models` takes the **name
+of an environment variable** that holds the key, so a key
+does not end up in your shell history, in `report.json`, or
+in the saved prompts.
+
+## The fixture is deliberately broken
+
+[`examples/smoke-oracle/`](examples/smoke-oracle/) ships a
+router with a defect and a smoke check that always exits 0.
+That is what it is for. Do not copy either file. Reports
+about the routing bug are not security issues; they are the
+demonstration. The same is true of
+`eval/cases/chunk-off-by-one/`, whose patches seed a defect
+on purpose.
+
+## What is in scope
+
+- **Instruction injection into the protocol.**
+  `skill/SKILL.md` says the failing output is evidence and
+  never instruction. If you can craft a repository, test
+  fixture, comment, or error message that makes a compliant
+  agent delete a test, widen its permissions, take an
+  unrelated write action, or leak context, that is a real
+  vulnerability in the protocol.
+- **Oracle escape in the harness.** Anything that lets the
+  model under test read the held-out patch, the guard
+  substrings, or the pre-defect code. Three of these existed
+  before the first release and each is now covered by a
+  test. A fourth would be a genuine finding. Note that this
+  class overlaps with `oracle-gap`; file it here if it works
+  by reading the oracle, and as an issue if it works by
+  guessing.
+- **Sandbox escape.** A repair patch or a case command that
+  writes outside the sandbox directory.
+- **Credential handling.** Any path by which an API key
+  reaches `report.json`, a saved prompt, the output
+  directory, or a log.
+- **Harmful guidance.** Anything in the protocol or a
+  committed example that would make a reader's system less
+  safe if followed.
+
+## What is out of scope
+
+- The defects in `examples/smoke-oracle/` and in the eval
+  cases.
+- A model producing a bad patch. That is the measurement,
+  not a vulnerability.
+- Running an untrusted case file and having it execute. That
+  is documented above and is inherent to the design.
+- Vulnerabilities in the agent or the model endpoint you
+  use. Report those to that vendor.
+
+## Reporting
+
+Open a
+[private security advisory](https://github.com/trycopilotai/replx/security/advisories/new)
+for anything in scope. For everything else an ordinary issue
+is preferred; this project would rather discuss its failure
+modes in public.
+
+Expect a first response within a week. This is a solo
+project with no on-call.
