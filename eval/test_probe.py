@@ -519,6 +519,56 @@ class ProbeTest(unittest.TestCase):
         self.assertEqual(result["status"], "unsolved")
         self.assertEqual(result["invalid_json_count"], 3)
 
+    def test_miscounted_hunk_header_still_applies(self) -> None:
+        """A correct fix under a wrong @@ count must not fail.
+
+        Models routinely emit the right change under a hunk
+        header whose line counts are off by one. Rejecting that
+        measures diff arithmetic instead of repair, which is
+        what the first real run of this harness did: it lost a
+        correct one-line fix six times out of six.
+        """
+        miscounted = (
+            "--- a/subject/calc.py\n"
+            "+++ b/subject/calc.py\n"
+            "@@ -1,7 +1,7 @@\n"        # body is 3 lines, not 7
+            " def add(a, b):\n"
+            "-    return a - b\n"
+            "+    return a + b\n"
+        )
+        holder = self.make_repo()
+        with holder:
+            with FakeCompletionServer(
+                [repair_payload("fix under a wrong count", miscounted)]
+            ) as server:
+                result = self.run_probe(holder, server)
+
+        self.assertEqual(
+            result["invalid_patch_count"], 0, msg=result["error_message"]
+        )
+        self.assertTrue(result["solved"])
+
+    def test_case_fixtures_stay_strict(self) -> None:
+        """Leniency applies to the subject, never to our own."""
+        holder = self.make_repo()
+        with holder:
+            root = Path(holder.name)
+            bad = root / "eval" / "cases" / "add" / "bad.patch"
+            bad.write_text(
+                "--- a/subject/calc.py\n"
+                "+++ b/subject/calc.py\n"
+                "@@ -1,9 +1,9 @@\n"
+                " def add(a, b):\n"
+                "-    return a - b\n"
+                "+    return a + b\n",
+                encoding="utf-8",
+            )
+            result = PROBE.apply_patch(root, bad)
+            self.assertNotEqual(
+                result.returncode, 0,
+                "a malformed case fixture must fail loudly",
+            )
+
     def test_invalid_unified_diff_is_recorded(self) -> None:
         holder = self.make_repo()
         with holder:

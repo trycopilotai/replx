@@ -587,7 +587,23 @@ def call_repair_model(
         "temperature": 0.0,
         "max_tokens": DEFAULT_MAX_TOKENS,
     }
-    return post_chat_completion(model, request_body), user_prompt
+    try:
+        return post_chat_completion(model, request_body), user_prompt
+    except ModelUnavailable as exc:
+        # Newer endpoints reject `max_tokens` and want
+        # `max_completion_tokens`, and some reject a non-default
+        # temperature. Retry once on the parameter names rather
+        # than recording a capable model as unreachable.
+        message = str(exc)
+        if "max_tokens" not in message and "temperature" not in message:
+            raise
+        retry = dict(request_body)
+        if "max_tokens" in message:
+            retry.pop("max_tokens", None)
+            retry["max_completion_tokens"] = DEFAULT_MAX_TOKENS
+        if "temperature" in message:
+            retry.pop("temperature", None)
+        return post_chat_completion(model, retry), user_prompt
 
 
 def ensure_directory(path: Path) -> None:
@@ -703,10 +719,26 @@ def revert_patch(worktree: Path, patch: Path) -> CommandResult:
 
 
 def apply_repair_patch(worktree: Path, patch_text: str) -> CommandResult:
+    """Apply the model's diff, tolerantly.
+
+    `--recount` tells git to infer hunk line counts from the
+    patch body instead of trusting the `@@` header. Models
+    routinely emit a correct fix under a header whose counts
+    are off by one, and a strict apply turns that into an
+    `unsolved`, which measures diff arithmetic rather than
+    repair. The first real run of this harness lost a correct
+    one-line fix exactly that way, six times out of six.
+
+    The leniency is deliberately asymmetric. Case fixtures go
+    through `apply_patch` and stay strict, because those are
+    ours and a malformed one is a bug in the case. Only the
+    subject's output gets the benefit of the doubt.
+    """
     patch_path = worktree / ".replx-repair.patch"
     patch_path.write_text(patch_text, encoding="utf-8")
     result = run_command(
-        ["git", "apply", "--whitespace=nowarn", str(patch_path)], worktree
+        ["git", "apply", "--recount", "--whitespace=nowarn", str(patch_path)],
+        worktree,
     )
     patch_path.unlink(missing_ok=True)
     return result

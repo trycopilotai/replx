@@ -151,12 +151,15 @@ they cannot be read or edited. A patch that makes the
 command pass without fixing the defect is recorded as
 `bad_success`, which is a distinct result from `unsolved`.
 
-**No model has been scored yet**, because no endpoint was
-reachable when this was built.
-[`eval/RESULTS.md`](eval/RESULTS.md) says so at the top
-rather than in a footnote. What is verified is the
-instrument: 15 offline tests, no network and no model
-required.
+Three models have been scored so far, in
+[`eval/RESULTS.md`](eval/RESULTS.md). `gpt-4.1` solves the
+one case in a single iteration with the held-out checks
+passing; two weaker models never produced an applicable
+patch, which the results separate from a repair failure
+rather than conflating. **No `bad_success` has been seen
+from a real model yet**, so the headline claim is
+demonstrated by the 17 offline tests and not yet
+field-tested.
 
 ```sh
 python3 -m unittest discover -s eval -q
