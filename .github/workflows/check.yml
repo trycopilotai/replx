@@ -1,0 +1,34 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The suite claims a clean clone needs only python3, so
+        # it runs on more than one. 3.11 is the floor this
+        # project verifies, not the floor the code happens to
+        # parse at.
+        python-version: ["3.11", "3.13"]
+    steps:
+      # Pinned to commit SHAs. Tags are mutable and this
+      # workflow runs on pull requests from forks.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # No install step on purpose. If this job ever needs one,
+      # the "nothing to install beyond python3" claim in the
+      # README has stopped being true.
+      - name: Run the offline suite
+        run: python3 -m unittest discover -s eval -q

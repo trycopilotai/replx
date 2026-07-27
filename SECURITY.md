@@ -39,6 +39,38 @@ of an environment variable** that holds the key, so a key
 does not end up in your shell history, in `report.json`, or
 in the saved prompts.
 
+## The protocol does not stop to ask
+
+`replx` has no confirmation step, and that is a decision
+rather than an oversight. Step 5 diagnoses and edits on every
+iteration without pausing, so a budget of 4 is up to four
+rounds of file edits and command runs with nobody in the
+loop. A loop that asks before each repair is a loop you have
+to sit and watch, which is most of the value gone.
+
+What that costs you:
+
+- **It edits your working tree in place.** Nothing is
+  stashed, branched, or backed up first. Run it on a clean
+  tree, or on a branch you are willing to throw away, so
+  `git diff` is a complete account of what it did.
+- **It runs the command you named, repeatedly.** If that
+  command deploys, migrates a database, or posts to a
+  network service, so does every iteration.
+- **The blast radius is whatever the agent may already do.**
+  Permissions come from the agent you paste the protocol
+  into, not from the protocol. An agent running with
+  approvals turned off has approvals turned off here too.
+
+Step 6 constrains *what kind* of repair counts, not what the
+agent is permitted to touch. It is a quality bar, not a
+sandbox, and it is written for a cooperative agent. Do not
+rely on it against a hostile one.
+
+For an unfamiliar repository, the honest setup is a
+disposable checkout and a budget you can afford to have spent
+badly.
+
 ## The fixture is deliberately broken
 
 [`examples/smoke-oracle/`](examples/smoke-oracle/) ships a

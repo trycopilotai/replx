@@ -124,7 +124,7 @@ Or from the marketplace, alongside the other
 
 ```text
 /plugin marketplace add trycopilotai/skills
-/plugin install replx@trycopilot
+/plugin install replx@trycopilotai
 ```
 
 The clone is pinned to a tag rather than to `main`. This
@@ -340,3 +340,10 @@ out, which is information you can act on.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Not affiliated with GitHub
+
+`trycopilot.ai` is an independent project. It is not
+affiliated with, endorsed by, or connected to GitHub,
+Microsoft, or GitHub Copilot. The name is a domain the author
+owns and predates this repository.
