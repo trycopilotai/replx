@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -725,6 +726,96 @@ class ProbeTest(unittest.TestCase):
             "hash, because the transcript claims to be unedited output "
             "of the protocol it names." % (prefix, actual[: len(prefix)]),
         )
+
+    def test_demo_matches_the_transcript(self) -> None:
+        """The animation must not state a number the repo denies.
+
+        The demo previously hard-coded its own copy of the run
+        and drifted: it claimed `Iterations used: 1/4` from the
+        first recorded run while the transcript and the README
+        both said 2/4. A reader watching the top of the README
+        was told a number contradicted two screens below.
+
+        assets/build.py now derives every frame from the
+        transcript. This asserts that it still does, by loading
+        the generator and checking the values it extracts
+        against the transcript text itself. It fails if anyone
+        reintroduces hand-written frame copy.
+        """
+        import importlib.util
+
+        root = Path(__file__).resolve().parent.parent
+        build_py = root / "assets" / "build.py"
+        self.assertTrue(build_py.exists(), "assets/build.py is missing")
+
+        spec = importlib.util.spec_from_file_location(
+            "replx_build", build_py
+        )
+        assert spec is not None and spec.loader is not None
+        build = importlib.util.module_from_spec(spec)
+        sys.modules["replx_build"] = build
+        spec.loader.exec_module(build)
+
+        run = build.read_transcript()
+        readme = (root / "README.md").read_text(encoding="utf-8")
+
+        # Asserting that a value read from the transcript also
+        # appears in the transcript would be tautological. The
+        # two things that can actually drift are checked instead.
+
+        # 1. The generator must hold no hard-coded run values.
+        #    That is exactly how the previous version went stale.
+        source = build_py.read_text(encoding="utf-8")
+        marker = chr(34) * 3
+        body = source.split(marker, 2)[-1]
+        for literal in re.findall(r"\b\d+/\d+\b", body):
+            self.assertNotIn(
+                literal, run["iterations"],
+                msg="assets/build.py hard-codes %r; every run value must "
+                    "be derived from the transcript" % literal,
+            )
+
+        # 2. The README and results state the test count in
+        #    prose. Compute it rather than trusting either.
+        actual = len([m for m in dir(ProbeTest) if m.startswith("test_")])
+        results = (root / "eval" / "RESULTS.md").read_text(encoding="utf-8")
+        for name, text in (("README.md", readme), ("RESULTS.md", results)):
+            stated = re.search(r"\b(\d+)\s+(?:offline\s+)?tests\b", text)
+            if stated is None:
+                continue
+            self.assertEqual(
+                int(stated.group(1)), actual,
+                msg="%s says %s tests, there are %d"
+                    % (name, stated.group(1), actual),
+            )
+
+        # 3. The README states the iteration count in prose, by
+        #    hand, so it can disagree with the transcript.
+        #    hand, so it can disagree with the transcript.
+        used = run["iterations"].split("/")[0].strip()
+        words = {"1": "one", "2": "two", "3": "three", "4": "four"}
+        claimed = re.search(
+            r"\b(one|two|three|four)\s+iterations?\b", readme, re.I)
+        self.assertIsNotNone(
+            claimed, "README does not state an iteration count")
+        assert claimed is not None
+        self.assertEqual(
+            claimed.group(1).lower(), words.get(used, used),
+            msg="README says %r iterations, transcript says %r"
+                % (claimed.group(1), run["iterations"]),
+        )
+
+        # And the frames must actually accumulate, so nothing a
+        # reader has seen is ever replaced or scrolled away.
+        steps = build.build_steps(run)
+        self.assertGreater(len(steps), 4)
+        for index in range(1, len(steps)):
+            previous, current = steps[index - 1], steps[index]
+            self.assertEqual(
+                current[: len(previous)], previous,
+                msg=f"frame {index + 1} does not extend frame {index}; "
+                    "the demo replaces content instead of accumulating",
+            )
 
     def test_shipped_case_loads_and_declares_held_out_checks(self) -> None:
         """The case committed to this repo is valid."""

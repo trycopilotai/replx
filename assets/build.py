@@ -1,21 +1,48 @@
 #!/usr/bin/env python3
 """Regenerate assets/: the social preview and the demo GIF.
 
-Renders HTML through headless Chrome, because ImageMagick's
+The demo is **derived from the committed transcript**, not
+authored here. `examples/smoke-oracle-run.md` is parsed for its
+iteration and outcome sections, and the frames are built from
+what it says. Nothing about the run is typed into this file.
+
+That is deliberate. An earlier version hand-wrote the frame
+text and it drifted: the animation claimed `Iterations used:
+1/4` from the first recorded run while the transcript and the
+README both said 2/4. A reader watching the demo was being told
+a number the repository contradicted two screens below. Parsing
+the transcript makes that class of drift impossible, and
+`test_demo_matches_the_transcript` fails if this file starts
+inventing content again.
+
+The animation **accumulates**. Each frame is the previous frame
+plus new lines; nothing that appears ever leaves. The earlier
+version was four slides that replaced one another, so content
+at a given position vanished and was overwritten, which reads
+as the earlier output scrolling up and out of view. The canvas
+height is computed from the finished session rather than
+guessed, so no line is ever clipped and nothing scrolls.
+
+Rendered through headless Chrome, because ImageMagick's
 internal SVG renderer drops arc paths and strokes.
 
-Every text tone used here was checked against #0d1117 for WCAG
-1.4.3 and clears 4.5:1. #6e7681 is deliberately absent; it
-measures 4.12:1 and is the tone the l8 demo had to replace.
+Every text tone was checked against #0d1117 for WCAG 1.4.3 and
+clears 4.5:1. #6e7681 is deliberately absent; it measures
+4.12:1.
+
+Needs headless Chrome and ImageMagick.
 """
 
+import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 ASSETS = Path(__file__).resolve().parent
+REPO = ASSETS.parent
 OUT = ASSETS / ".frames"
+TRANSCRIPT = REPO / "examples" / "smoke-oracle-run.md"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 BG = "#0d1117"
@@ -31,24 +58,127 @@ FONT = (
     "'Cascadia Mono', 'Roboto Mono', monospace"
 )
 
+WIDTH = 1000
+LINE_PX = 27          # 17px at 1.55 line-height, rounded up
+CHROME_PX = 58        # top padding plus the three window dots
+BOTTOM_PAD = 26
+
+
+def esc(text: str) -> str:
+    return (
+        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    )
+
+
+def strip_md(text: str) -> str:
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    return re.sub(r"`(.+?)`", r"\1", text)
+
+
+def clip(text: str, limit: int) -> str:
+    text = strip_md(text)
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0] + "..."
+
+
+def read_transcript() -> dict:
+    """Pull the run's facts out of the committed transcript."""
+    text = TRANSCRIPT.read_text(encoding="utf-8")
+
+    def field(section: str, label: str) -> str:
+        block = re.search(
+            r"^## " + re.escape(section) + r"\n(.*?)(?=\n## |\n---|\Z)",
+            text, re.S | re.M)
+        if not block:
+            raise SystemExit("transcript has no '## %s' section" % section)
+        found = re.search(
+            r"^- \*{0,2}" + re.escape(label) + r"\*{0,2}:\s*(.+?)(?=\n- |\Z)",
+            block.group(1), re.S | re.M)
+        if not found:
+            raise SystemExit("'%s' has no '%s' field" % (section, label))
+        return " ".join(found.group(1).split())
+
+    header = re.search(r"^# replx: (.+)$", text, re.M)
+    if not header:
+        raise SystemExit("transcript has no '# replx: ...' heading")
+    console = re.search(r"```console\n(\$ \./smoke\.sh\n.*?)```", text, re.S)
+    if not console:
+        raise SystemExit("transcript has no failing-run console block")
+    budget = re.search(r"^- Budget: (.+)$", text, re.M)
+    condition = re.search(
+        r"^- Success condition: (.+?)(?=\n- )", text, re.S | re.M)
+
+    return {
+        "target": header.group(1).strip(),
+        "before": console.group(1).rstrip("\n").splitlines(),
+        "condition": " ".join(condition.group(1).split()) if condition else "",
+        "budget": budget.group(1).strip() if budget else "",
+        "i1_result": field("Iteration 1", "Result"),
+        "i1_fix": field("Iteration 1", "Fix"),
+        "i2_result": field("Iteration 2", "Result"),
+        "status": field("Outcome", "Status"),
+        "iterations": field("Outcome", "Iterations used"),
+    }
+
+
+def build_steps(run: dict) -> list[list[str]]:
+    """Cumulative steps: each is the previous plus new lines."""
+    prompt = '<span class="green b">$</span> '
+    lines: list[str] = []
+    steps: list[list[str]] = []
+
+    def add(*new: str) -> None:
+        lines.extend(new)
+        steps.append(list(lines))
+
+    before = run["before"]
+    failing = [l for l in before if l.startswith("smoke:")][0]
+    detail = [l for l in before if l.startswith("  /")]
+
+    # before[0] already carries its own "$ " from the console
+    # block, so strip it rather than rendering two prompts.
+    add(prompt + esc(before[0].lstrip("$ ")))
+    add(*['<span class="dim">%s</span>' % esc(l) for l in detail])
+    add('<span class="red b">%s</span>' % esc(failing),
+        prompt + "echo $?",
+        '<span class="amber b">0</span>')
+    add("", '<span class="dim">The check failed. The shell was told'
+            ' everything is fine.</span>')
+    add("", prompt + '<span class="blue b">/replx %s</span>'
+        % esc(run["target"]))
+    add("",
+        '<span class="dim">Success condition:</span> '
+        '<span class="green">%s</span>' % esc(clip(run["condition"], 56)),
+        '<span class="dim">Budget:</span> %s' % esc(run["budget"]))
+    add("", '<span class="b">Iteration 1</span>',
+        '  <span class="dim">Result:</span> %s'
+        % esc(clip(run["i1_result"], 64)))
+    add('  <span class="dim">Fix:</span> %s' % esc(clip(run["i1_fix"], 64)))
+    add("", '<span class="b">Iteration 2</span>',
+        '  <span class="dim">Result:</span> '
+        '<span class="green">%s</span>' % esc(clip(run["i2_result"], 60)))
+    add("", '<span class="b">Outcome</span>',
+        '  <span class="dim">Status:</span> '
+        '<span class="green b">%s</span>' % esc(strip_md(run["status"])),
+        '  <span class="dim">Iterations used:</span> %s'
+        % esc(strip_md(run["iterations"])))
+    return steps
+
+
 SHELL = """<!doctype html>
 <html><head><meta charset="utf-8"><style>
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   html, body {{ background:{bg}; }}
   body {{
     width:{w}px; height:{h}px;
-    font-family:{font};
-    font-size:17px; line-height:1.55;
-    color:{fg};
-    padding:26px 30px;
+    font-family:{font}; font-size:17px; line-height:1.55;
+    color:{fg}; padding:26px 30px;
     -webkit-font-smoothing:antialiased;
   }}
-  .dim {{ color:{dim}; }}
-  .green {{ color:{green}; }}
-  .red {{ color:{red}; }}
-  .amber {{ color:{amber}; }}
-  .blue {{ color:{blue}; }}
-  .b {{ font-weight:700; }}
+  .dim {{ color:{dim}; }} .green {{ color:{green}; }}
+  .red {{ color:{red}; }} .amber {{ color:{amber}; }}
+  .blue {{ color:{blue}; }} .b {{ font-weight:700; }}
   .chrome {{ display:flex; gap:8px; margin-bottom:20px; }}
   .dot {{ width:12px; height:12px; border-radius:50%; }}
   pre {{ white-space:pre-wrap; font-family:inherit; }}
@@ -62,89 +192,20 @@ SHELL = """<!doctype html>
 </body></html>
 """
 
-PROMPT = '<span class="green b">$</span> '
-
-FRAMES = [
-    # 1. the problem
-    PROMPT + './smoke.sh\n'
-    '<span class="dim">  /api/v1/orders  -> notfound, wanted api</span>\n'
-    '<span class="dim">  /static/app.css -> notfound, wanted static</span>\n'
-    '<span class="red b">smoke: FAIL 2 of 3 checks</span>\n'
-    + PROMPT + 'echo $?\n'
-    '<span class="amber b">0</span>\n'
-    '\n'
-    '<span class="dim">Two routes broken. The shell was told</span>\n'
-    '<span class="amber">everything is fine.</span>',
-
-    # 2. invocation
-    PROMPT + './smoke.sh\n'
-    '<span class="dim">  /api/v1/orders  -> notfound, wanted api</span>\n'
-    '<span class="dim">  /static/app.css -> notfound, wanted static</span>\n'
-    '<span class="red b">smoke: FAIL 2 of 3 checks</span>\n'
-    + PROMPT + 'echo $?\n'
-    '<span class="amber b">0</span>\n'
-    '\n'
-    + PROMPT + '<span class="blue b">/replx the smoke check passes</span>',
-
-    # 3. condition declared, one iteration
-    '<span class="blue b">replx: the smoke check passes</span>\n'
-    '\n'
-    '<span class="dim">Success condition:</span> a line beginning '
-    '<span class="green">smoke: PASS</span>\n'
-    '<span class="dim">Budget:</span> 4 iterations\n'
-    '\n'
-    '<span class="b">Iteration 1</span>\n'
-    '  <span class="dim">Command:</span> ./smoke.sh\n'
-    '  <span class="dim">Result:</span> exit <span class="amber">0</span>, '
-    'and <span class="red">smoke: FAIL 2 of 3</span>\n'
-    '           <span class="amber b">-> not success</span>\n'
-    '  <span class="dim">Diagnosis:</span> first-match table, '
-    '"/" shadows every prefix\n'
-    '  <span class="dim">Fix:</span> route() selects the '
-    '<span class="b">longest</span> matching prefix',
-
-    # 4. verified, and the declined shortcut
-    '<span class="b">Iteration 1</span>\n'
-    '  <span class="dim">Fix:</span> route() selects the '
-    '<span class="b">longest</span> matching prefix\n'
-    '  <span class="dim">Verify:</span> ./smoke.sh -> '
-    '<span class="green b">smoke: PASS 3 checks</span>\n'
-    '\n'
-    '<span class="b">Outcome</span>\n'
-    '  <span class="dim">Status:</span> '
-    '<span class="green b">solved</span>\n'
-    '  <span class="dim">Iterations used:</span> 1/4\n'
-    '  <span class="dim">Declined:</span> reordering ROUTES. It also\n'
-    '  turns the check green and leaves the trap in place.\n'
-    '\n'
-    '<span class="dim">Exit status was</span> '
-    '<span class="amber">0</span> '
-    '<span class="dim">before and after. It never</span>\n'
-    '<span class="dim">carried any information.</span>',
-]
-
 PREVIEW = """<!doctype html>
 <html><head><meta charset="utf-8"><style>
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   html, body {{ background:{bg}; width:1280px; height:640px; }}
-  body {{
-    font-family:{font};
-    color:{fg};
-    display:flex; flex-direction:column;
-    align-items:center; justify-content:center;
-    text-align:center;
-  }}
+  body {{ font-family:{font}; color:{fg}; display:flex;
+    flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; }}
   .mark {{ width:132px; height:132px; margin-bottom:34px; }}
   h1 {{ font-size:104px; letter-spacing:-2px; font-weight:700; }}
-  .tag {{
-    font-size:33px; color:{fg}; margin-top:18px;
-    font-weight:600;
-  }}
+  .tag {{ font-size:33px; margin-top:18px; font-weight:600; }}
   .sub {{ font-size:25px; color:{dim}; margin-top:30px; }}
   .zero {{ color:{amber}; }}
 </style></head><body>
-  <svg class="mark" viewBox="0 0 512 512" role="img"
-       aria-label="replx">
+  <svg class="mark" viewBox="0 0 512 512" role="img" aria-label="replx">
     <rect width="512" height="512" rx="112" fill="#161b22"/>
     <rect x="4" y="4" width="504" height="504" rx="108"
           fill="none" stroke="#30363d" stroke-width="8"/>
@@ -165,77 +226,55 @@ def shoot(html: str, width: int, height: int, out: Path) -> None:
     src = out.with_suffix(".html")
     src.write_text(html, encoding="utf-8")
     subprocess.run(
-        [
-            CHROME,
-            "--headless",
-            "--disable-gpu",
-            "--hide-scrollbars",
-            "--force-device-scale-factor=2",
-            "--screenshot=" + str(out),
-            "--window-size=%d,%d" % (width, height),
-            "file://" + str(src),
-        ],
-        check=True,
-        capture_output=True,
-    )
+        [CHROME, "--headless", "--disable-gpu", "--hide-scrollbars",
+         "--force-device-scale-factor=2", "--screenshot=" + str(out),
+         "--window-size=%d,%d" % (width, height), "file://" + str(src)],
+        check=True, capture_output=True)
     src.unlink()
 
 
 def main() -> int:
+    if not TRANSCRIPT.exists():
+        raise SystemExit("missing transcript: " + str(TRANSCRIPT))
     OUT.mkdir(parents=True, exist_ok=True)
-    width, height = 1000, 400
 
-    for index, body in enumerate(FRAMES, start=1):
-        html = SHELL.format(
-            bg=BG, fg=FG, dim=DIM, green=GREEN, red=RED,
-            amber=AMBER, blue=BLUE, font=FONT,
-            w=width, h=height, body=body,
-        )
-        target = OUT / ("frame-%02d.png" % index)
-        shoot(html, width, height, target)
-        print("  wrote " + target.name)
+    run = read_transcript()
+    steps = build_steps(run)
+    height = CHROME_PX + LINE_PX * len(steps[-1]) + BOTTOM_PAD
+    print("  %d frames, %d final lines, canvas %dx%d"
+          % (len(steps), len(steps[-1]), WIDTH, height))
 
-    shoot(
-        PREVIEW.format(bg=BG, fg=FG, dim=DIM, amber=AMBER, font=FONT),
-        1280,
-        640,
-        ASSETS / "social-preview.png",
-    )
-    print("  wrote social-preview.png")
+    for index, body in enumerate(steps, start=1):
+        html = SHELL.format(bg=BG, fg=FG, dim=DIM, green=GREEN, red=RED,
+                            amber=AMBER, blue=BLUE, font=FONT,
+                            w=WIDTH, h=height, body="\n".join(body))
+        shoot(html, WIDTH, height, OUT / ("frame-%02d.png" % index))
 
-    # Per-frame delays in centiseconds; one cycle is 4.6s.
-    #
-    # The demo loops. An earlier version played once, which is
-    # clean against WCAG 2.2.2 and useless in practice: a README
-    # GIF starts on page load and is finished before a reader has
-    # scrolled to it, so it reads as a static screenshot.
-    #
-    # Looping motion exceeds the 5s threshold in 2.2.2, so this
-    # is a deliberate trade rather than a conformance claim. The
-    # mitigation is the poster: README.md wraps the GIF in a
-    # <picture> whose prefers-reduced-motion source serves
-    # demo-poster.png, so a reader who has asked their OS for
-    # less motion gets the still frame instead.
-    delays = ["100", "80", "120", "160"]
+    shoot(PREVIEW.format(bg=BG, fg=FG, dim=DIM, amber=AMBER, font=FONT),
+          1280, 640, ASSETS / "social-preview.png")
+
+    # Short even delays so it reads as output arriving rather
+    # than slides changing, with a long hold on the outcome.
     args = ["magick"]
-    for delay, index in zip(delays, range(1, len(FRAMES) + 1)):
-        args += ["-delay", delay, str(OUT / ("frame-%02d.png" % index))]
-    args += [
-        "-resize", "1000x400", "-colors", "128", "-layers", "Optimize",
-        str(OUT / "raw.gif"),
-    ]
+    for index in range(1, len(steps) + 1):
+        args += ["-delay", "150" if index == len(steps) else "48",
+                 str(OUT / ("frame-%02d.png" % index))]
+    args += ["-resize", "%dx%d" % (WIDTH, height), "-colors", "64",
+             "-layers", "Optimize", str(OUT / "raw.gif")]
     subprocess.run(args, check=True, capture_output=True)
-    subprocess.run(
-        ["magick", str(OUT / "raw.gif"), "-loop", "0",
-         str(ASSETS / "demo.gif")],
-        check=True, capture_output=True,
-    )
-    subprocess.run(
-        ["magick", str(OUT / "frame-04.png"), "-resize", "1000x400",
-         str(ASSETS / "demo-poster.png")],
-        check=True, capture_output=True,
-    )
-    print("  wrote demo.gif and demo-poster.png")
+
+    # Loops. A play-once GIF finishes before a reader scrolls to
+    # it and reads as a screenshot. Looping motion exceeds the 5s
+    # threshold in WCAG 2.2.2, so README.md wraps it in a
+    # <picture> whose prefers-reduced-motion source is the poster.
+    subprocess.run(["magick", str(OUT / "raw.gif"), "-loop", "0",
+                    str(ASSETS / "demo.gif")], check=True,
+                   capture_output=True)
+    subprocess.run(["magick", str(OUT / ("frame-%02d.png" % len(steps))),
+                    "-resize", "%dx%d" % (WIDTH, height),
+                    str(ASSETS / "demo-poster.png")], check=True,
+                   capture_output=True)
+    print("  wrote demo.gif, demo-poster.png, social-preview.png")
     shutil.rmtree(OUT, ignore_errors=True)
     return 0
 

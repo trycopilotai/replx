@@ -71,7 +71,7 @@ model that is deleting it.
 
 ## What has been verified
 
-The harness itself, offline, by 17 tests that need no
+The harness itself, offline, by 18 tests that need no
 network and no model:
 
 ```sh
