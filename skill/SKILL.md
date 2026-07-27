@@ -6,10 +6,10 @@ description: >-
   attempts. Use when a build, test, lint, or health check is
   failing and you want it repaired under a fixed iteration
   budget, or when you have an end state described in prose
-  and no exact command yet. Rejects exit 0 as sufficient
-  evidence when the command reports its own status, refuses
-  the repairs that make a command pass without fixing the
-  defect, and stops paying the lint cost once lint is clean.
+  and no exact command yet. Takes the success condition in
+  prose as readily as by exit status, refuses the repairs
+  that make a command pass without fixing the defect, and
+  stops paying the lint cost once lint is clean.
 ---
 
 # replx
@@ -57,15 +57,31 @@ diagnosis. Report honestly when the budget runs out.
 
    This step is the one most loops skip, and skipping it is
    how a loop reports success on a broken system.
-   - The default success condition is shell exit status 0.
-   - **When the command reports its own status in its
-     output, exit status is not the success condition.**
-     Many health checks, smoke suites, and deployment
-     verifiers exit 0 while printing a failure. Name the
-     exact line that means success and require it.
-   - State the chosen condition before the first iteration,
-     so the loop cannot redefine success later to something
-     it already achieved.
+
+   A condition is mechanical or semantic. Both are valid.
+   - **Mechanical.** Shell exit status 0. This is the
+     default, and for most commands it is the right answer.
+     Take it and move on.
+   - **Semantic.** A statement about the run that no exit
+     status expresses: `no build warnings`, `the migration
+     runs twice with the same result`, `the page loads with
+     an empty console`. Say what you will check to decide
+     it, and say it before the first iteration. A condition
+     you cannot check is a budget spent for nothing, so if
+     you cannot make one checkable, say that and stop.
+   - **Mechanical, where the exit status is not telling the
+     truth.** Many health checks, smoke suites, and
+     deployment verifiers exit 0 while printing a failure.
+     When a command reports its own status in its output,
+     that report is the condition and the exit status is
+     not. Name the exact line that means success and require
+     it.
+
+   State the chosen condition before the first iteration, so
+   the loop cannot redefine success later to something it
+   has already achieved. If the caller gave you a prose goal
+   in step 1, the condition is that goal made checkable, not
+   whichever command you happened to derive from it.
 
    Worked example. A smoke script always exits 0 and prints
    one of two lines:
@@ -168,7 +184,8 @@ diagnosis. Report honestly when the budget runs out.
 # replx: <target>
 
 - Target: <command or end state>
-- Success condition: <exit 0, or the exact line required>
+- Success condition: <exit 0, the exact line required, or
+  the semantic condition and what checks it>
 - Budget: <n> iterations
 
 ## Iteration 1
@@ -197,7 +214,8 @@ execution: it runs your command, reads the failure, and
 edits until the condition you declared is met.
 
 The loop itself is not the interesting part. The success
-condition is. See
+condition is, because it is the part you can write in prose.
+See
 [the README](https://github.com/trycopilotai/replx#readme)
 for how that differs from an exit-status loop, and
 [the evaluation harness](https://github.com/trycopilotai/replx/tree/main/eval)

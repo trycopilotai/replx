@@ -87,12 +87,17 @@ the animation. The full text is in
 [`examples/smoke-oracle-run.md`](examples/smoke-oracle-run.md),
 which carries the hashes.
 
+The input was the prose goal `the smoke check passes`, with
+no command in it. Deriving `./smoke.sh` and deciding that
+the printed status line is the oracle are both part of the
+run.
+
 Two iterations, the second being verification. The agent
 declined the cheaper repair and said why: reordering the
-route table turns the check green, but it leaves first-match
-semantics under a comment promising longest-prefix, so a
-more specific route appended later is silently shadowed by
-the broader one above it. It changed the lookup instead.
+route table turns these three checks green while leaving
+first-match behaviour intact for every route the smoke suite
+does not cover. It changed the lookup instead, and left the
+table in its original order.
 
 Transcript, input, and run manifest:
 [`examples/smoke-oracle-run.md`](examples/smoke-oracle-run.md).
@@ -142,7 +147,7 @@ install, restart the session so it gets picked up.
 
 | A loop around an agent CLI                     | `replx`                                                                                                                                  |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Success is the exit status                     | Success is a condition you declare, and it can be a line of output                                                                       |
+| Success is the exit status                     | Success is a condition you declare, and it can be stated in prose rather than measured by the command             |
 | Retries the same state                         | One run per iteration, never wrapped in `until` or `while`                                                                               |
 | A passing command ends the run                 | The protocol names the repairs that buy a pass and instructs against them; the harness scores the ones its checks catch as `bad_success` |
 | Needs a runner installed                       | One Markdown file, read by the agent you already have                                                                                    |

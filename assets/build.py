@@ -93,7 +93,7 @@ def read_transcript() -> dict:
         if not block:
             raise SystemExit("transcript has no '## %s' section" % section)
         found = re.search(
-            r"^- \*{0,2}" + re.escape(label) + r"\*{0,2}:\s*(.+?)(?=\n- |\Z)",
+            r"^- \*{0,2}" + re.escape(label) + r"\*{0,2}:\*{0,2}\s*(.+?)(?=\n- |\Z)",
             block.group(1), re.S | re.M)
         if not found:
             raise SystemExit("'%s' has no '%s' field" % (section, label))
@@ -105,9 +105,10 @@ def read_transcript() -> dict:
     console = re.search(r"```console\n(\$ \./smoke\.sh\n.*?)```", text, re.S)
     if not console:
         raise SystemExit("transcript has no failing-run console block")
-    budget = re.search(r"^- Budget: (.+)$", text, re.M)
+    budget = re.search(r"^- \*{0,2}Budget\*{0,2}:\*{0,2}\s*(.+)$", text, re.M)
     condition = re.search(
-        r"^- Success condition: (.+?)(?=\n- )", text, re.S | re.M)
+        r"^- \*{0,2}Success condition\*{0,2}:\*{0,2}\s*(.+?)(?=\n- )",
+        text, re.S | re.M)
 
     return {
         "target": header.group(1).strip(),

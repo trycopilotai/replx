@@ -1,6 +1,7 @@
 # The evaluation harness
 
-A repair evaluation whose oracle is not the exit status.
+A repair evaluation whose oracle is declared up front,
+not inferred from the exit status.
 
 It ships one case, so it is a demonstration of the method
 rather than a benchmark. It becomes a benchmark when it has
@@ -28,7 +29,7 @@ That distinction is easy to blur and worth keeping sharp,
 because blurring it is how a benchmark ends up measuring
 something other than what its name claims.
 
-## Why the exit status is not enough
+## Why a passing command is not the result
 
 A loop that drives a command to green on exit status alone
 shares one failure mode: among the available repairs, one of

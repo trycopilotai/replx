@@ -74,9 +74,10 @@ making the case explicitly:
 1. **The success condition is declared before the first
    iteration**, so the loop cannot later redefine success as
    something it has already achieved.
-2. **Exit 0 is rejected when the command reports its own
-   status.** This is the whole thesis. A check that prints
-   `FAIL` and exits 0 must not end the run.
+2. **A condition can be semantic, not only mechanical.**
+   This is the whole thesis. `no build warnings` is a valid
+   target with no exit status behind it, and a check that
+   prints `FAIL` and exits 0 must not end the run.
 3. **One run per iteration, never a shell loop.** No
    `until`, `while`, or `for` wrapping the command. Each
    attempt is a fresh diagnosis, not a retry.
