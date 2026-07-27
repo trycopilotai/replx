@@ -82,6 +82,22 @@ def clip(text: str, limit: int) -> str:
     return text[:limit].rsplit(" ", 1)[0] + "..."
 
 
+def read_headline() -> str:
+    """The README's headline, so the preview cannot contradict it.
+
+    This used to be typed into PREVIEW directly, and it went
+    stale the moment the README was reworded: the social card
+    still promised a loop that distrusts exit codes after the
+    page above it had stopped claiming that.
+    """
+    text = (REPO / "README.md").read_text(encoding="utf-8")
+    found = re.search(
+        r'<p align="center"><strong>(.+?)</strong></p>', text)
+    if not found:
+        raise SystemExit("README has no centred headline to read")
+    return found.group(1).strip()
+
+
 def read_transcript() -> dict:
     """Pull the run's facts out of the committed transcript."""
     text = TRANSCRIPT.read_text(encoding="utf-8")
@@ -216,8 +232,7 @@ PREVIEW = """<!doctype html>
     <circle cx="150" cy="150" r="30" fill="#d29922"/>
   </svg>
   <h1>replx</h1>
-  <div class="tag">A repair loop that does not assume
-    <span class="zero">exit 0</span> means success.</div>
+  <div class="tag">{headline}</div>
   <div class="sub">github.com/trycopilotai/replx</div>
 </body></html>
 """
@@ -251,7 +266,8 @@ def main() -> int:
                             w=WIDTH, h=height, body="\n".join(body))
         shoot(html, WIDTH, height, OUT / ("frame-%02d.png" % index))
 
-    shoot(PREVIEW.format(bg=BG, fg=FG, dim=DIM, amber=AMBER, font=FONT),
+    shoot(PREVIEW.format(bg=BG, fg=FG, dim=DIM, amber=AMBER, font=FONT,
+                         headline=esc(read_headline())),
           1280, 640, ASSETS / "social-preview.png")
 
     # Short even delays so it reads as output arriving rather
