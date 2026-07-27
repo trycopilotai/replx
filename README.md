@@ -112,7 +112,7 @@ As a Claude Code skill:
 
 ```sh
 D=$(mktemp -d) \
-  && git clone --quiet --depth 1 --branch v0.1.0 \
+  && git clone --quiet --depth 1 --branch v0.2.0 \
        https://github.com/trycopilotai/replx "$D/replx" \
   && mkdir -p ~/.claude/skills/replx \
   && cp "$D/replx/skill/SKILL.md" ~/.claude/skills/replx/ \
