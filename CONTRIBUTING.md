@@ -92,8 +92,8 @@ making the case explicitly:
 
 ## Changing the harness
 
-Six tests are load-bearing in the same sense. If any of them
-stops passing, claims in the README become false:
+Eight tests are load-bearing in the same sense. If any of
+them stops passing, claims in the README become false:
 
 - `test_held_out_checks_reject_shortcut_patch`
 - `test_repair_prompt_never_reveals_the_oracle`
@@ -101,6 +101,14 @@ stops passing, claims in the README become false:
 - `test_sandbox_has_no_history_to_read_the_answer_from`
 - `test_shipped_case_runs_end_to_end`
 - `test_run_manifest_matches_the_shipped_protocol`
+- `test_transcript_block_matches_its_own_hash`
+- `test_demo_matches_the_transcript`
+
+The last two are the ones that keep the front page honest.
+The README's demo and its account of the run are both derived
+from the committed transcript, so those two tests are the only
+thing standing between a reworded protocol and a page that
+describes a run which never happened.
 
 The second one is the one to be most careful around.
 Anything that adds detail to what the model is told after a
