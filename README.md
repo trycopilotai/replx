@@ -4,24 +4,43 @@
 
 <h1 align="center">replx</h1>
 
-<p align="center"><strong>A repair loop that does not assume exit 0 means success.</strong></p>
+<p align="center"><strong>A semantic repair loop that actually fixes code.</strong></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license">
   <img src="https://img.shields.io/badge/protocol-no%20dependencies-brightgreen.svg" alt="The protocol has no dependencies">
   <img src="https://img.shields.io/badge/install-one%20markdown%20file-blue.svg" alt="One markdown file">
-  <img src="https://img.shields.io/badge/oracle-declared%2C%20not%20assumed-8957e5.svg" alt="The oracle is declared, not assumed">
+  <img src="https://img.shields.io/badge/success-mechanical%20or%20semantic-8957e5.svg" alt="Success conditions can be mechanical or semantic">
 </p>
 
 `replx` drives a failing command to green in bounded
 iterations, one attempt per iteration, each with a fresh
 diagnosis. That part is not new.
 
-What it adds is a success condition you have to state. Many
-checks exit 0 while printing a failure, and the cheapest way
-to make any command pass is to stop it from checking.
-`replx` declares the condition before the first iteration
-and names the repairs that are not allowed to count.
+What it adds is that the success condition can be stated in
+prose. Both of these are valid input:
+
+```text
+/replx make test
+/replx make test passes and prints no build warnings
+```
+
+The first is mechanical, and the shell exit status decides
+it. The second is semantic, and no exit status can decide
+it, because a build that warns still exits 0. `replx` fixes
+the condition before the first iteration and holds the loop
+to it.
+
+That is the difference from an exit-status loop. A "Ralph
+Wiggum" loop can only ask whether the command came back
+green. It cannot ask whether the command was telling the
+truth, and it cannot express a goal the command does not
+already measure.
+
+It also names the repairs that are not allowed to count.
+Deleting the failing test makes any command pass, so the
+protocol rules that class out and the harness in `eval/`
+scores whether an agent took the shortcut anyway.
 
 The protocol is one Markdown file with no dependencies and
 no runtime: there is nothing to install beyond the agent you
