@@ -53,13 +53,18 @@ fail loudly.
 
 Nineteen prompts were sent to three models across these
 runs. Every line unique to the held-out patch was checked
-against every one of them:
+for exact textual presence in every one of them:
 
 ```text
 held-out lines unique to the held-out patch: 14
 prompts scanned: 19
-leaks: NONE
+exact overlap: NONE
 ```
+
+That is exact-line comparison. It cannot detect a
+paraphrase, an encoded value, or a partial-line hint, so it
+is evidence of no verbatim disclosure rather than of no
+leakage.
 
 The semantic guard's substrings **do** appear in the
 prompts, and that is by construction rather than by
@@ -71,7 +76,7 @@ model that is deleting it.
 
 ## What has been verified
 
-The harness itself, offline, by 18 tests that need no
+The harness itself, offline, by 19 tests that need no
 network and no model:
 
 ```sh
@@ -84,6 +89,7 @@ installed beyond python3 and git:
 ```text
 test_case_fixtures_stay_strict                         ok
 test_case_metadata_is_stripped_from_the_worktree       ok
+test_demo_matches_the_transcript                       ok
 test_endpoint_failure_is_reported_not_raised           ok
 test_fenced_json_response_is_parsed                    ok
 test_held_out_checks_reject_shortcut_patch             ok
@@ -99,8 +105,9 @@ test_semantic_guard_rejects_a_gutted_test              ok
 test_shipped_case_loads_and_declares_held_out_checks   ok
 test_shipped_case_runs_end_to_end                      ok
 test_successful_one_iteration_patch                    ok
+test_transcript_block_matches_its_own_hash             ok
 
-Ran 17 tests in 13.929s
+Ran 19 tests in 11.242s
 OK
 ```
 
@@ -110,11 +117,14 @@ harness's claims are false if any of them stops passing:
 | Test                                                  | What it establishes                                                                                                                                                             |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `test_held_out_checks_reject_shortcut_patch`          | A patch that makes the command exit 0 without fixing the defect is recorded as `bad_success`, and the held-out check fails on its own assertion rather than on an import error. |
-| `test_repair_prompt_never_reveals_the_oracle`         | Every line the held-out patch adds is absent from every prompt of the run, along with the guard substrings, the guard mechanics, and the case description.                      |
+| `test_repair_prompt_never_reveals_the_oracle`         | Every line unique to the held-out patch is absent from every prompt of the run, along with the guard mechanics and the case description. The guard's                            |
+| own substrings are visible by design.                 |
 | `test_case_metadata_is_stripped_from_the_worktree`    | `case.json` and the held-out patch are gone from the sandbox before the model reads anything, and no file in the sandbox contains the held-out content.                         |
 | `test_sandbox_has_no_history_to_read_the_answer_from` | The sandbox has exactly one commit and no parent, and the pre-defect code appears in no object git can reach from it.                                                           |
 | `test_shipped_case_runs_end_to_end`                   | The committed `bug.patch`, `held-out.patch`, and `case.json` work together against this repository, so a case edited without re-verification fails here.                        |
 | `test_run_manifest_matches_the_shipped_protocol`      | The transcript in `examples/` cites the sha256 of the protocol actually on disk, so reformatting the protocol cannot silently invalidate the run it documents.                  |
+| `test_transcript_block_matches_its_own_hash`          | The block between the rules in the committed transcript hashes to the value its own manifest cites, so a formatter run cannot silently falsify the `Edited: No` claim.          |
+| `test_demo_matches_the_transcript`                    | The animation's frames accumulate rather than replace, `assets/build.py` hard-codes no run values, and the stated test and iteration counts match reality.                      |
 
 Those tests are evidence that **the measuring instrument
 works**. The table above is evidence about three models.

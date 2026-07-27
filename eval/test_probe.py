@@ -817,6 +817,49 @@ class ProbeTest(unittest.TestCase):
                     "the demo replaces content instead of accumulating",
             )
 
+    def test_transcript_block_matches_its_own_hash(self) -> None:
+        """`Edited: No` must be checkable, not just asserted.
+
+        The manifest cites an output sha256 and claims the block
+        between the horizontal rules is raw output. Running a
+        formatter over the file rewraps that block: the words
+        survive, the bytes do not, and the claim silently becomes
+        false. CONTRIBUTING already exempts transcripts from the
+        wrap rule, and that exemption was violated anyway, which
+        is why this is a test rather than a convention.
+        """
+        import hashlib
+
+        root = Path(__file__).resolve().parent.parent
+        text = (root / "examples" / "smoke-oracle-run.md").read_text(
+            encoding="utf-8"
+        )
+
+        cited = re.search(r"Output sha256\s*\|\s*`([0-9a-f]+)", text)
+        self.assertIsNotNone(cited, "manifest cites no output sha256")
+        assert cited is not None
+
+        edited = re.search(r"\| Edited\s*\|\s*([^|]+)\|", text)
+        self.assertIsNotNone(edited, "manifest has no Edited field")
+        assert edited is not None
+        if not edited.group(1).strip().lower().startswith("no"):
+            self.skipTest("transcript declares itself edited")
+
+        sections = text.split("\n---\n")
+        self.assertGreaterEqual(
+            len(sections), 3, "transcript has no rule-delimited block"
+        )
+        block = sections[1].strip() + "\n"
+        actual = hashlib.sha256(block.encode("utf-8")).hexdigest()
+        prefix = cited.group(1)
+        self.assertTrue(
+            actual.startswith(prefix),
+            "the block between the rules hashes to %s..., but the manifest "
+            "cites %s... and claims the block is unedited raw output. A "
+            "formatter run over this file rewraps it: the words survive and "
+            "the bytes do not." % (actual[: len(prefix)], prefix),
+        )
+
     def test_shipped_case_loads_and_declares_held_out_checks(self) -> None:
         """The case committed to this repo is valid."""
         shipped = (

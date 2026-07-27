@@ -8,7 +8,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license">
-  <img src="https://img.shields.io/badge/dependencies-none-brightgreen.svg" alt="No dependencies">
+  <img src="https://img.shields.io/badge/protocol-no%20dependencies-brightgreen.svg" alt="The protocol has no dependencies">
   <img src="https://img.shields.io/badge/install-one%20markdown%20file-blue.svg" alt="One markdown file">
   <img src="https://img.shields.io/badge/oracle-declared%2C%20not%20assumed-8957e5.svg" alt="The oracle is declared, not assumed">
 </p>
@@ -23,9 +23,10 @@ to make any command pass is to stop it from checking.
 `replx` declares the condition before the first iteration
 and names the repairs that are not allowed to count.
 
-It is one Markdown file with no dependencies and no runtime.
-There is nothing to install beyond the agent you already
-use.
+The protocol is one Markdown file with no dependencies and
+no runtime: there is nothing to install beyond the agent you
+already use. The evaluation harness in `eval/` is separate
+and needs `python3` and `git`.
 
 ## The problem it exists for
 
@@ -42,14 +43,15 @@ $ echo $?
 ```
 
 Any loop whose condition is `$? == 0` is already finished,
-with two of the three routes broken. That is not a contrived
-script. Health checks, smoke suites, and deploy verifiers
-behave this way constantly, because they are written to
-report rather than to gate.
+with two of the three routes broken. The fixture is
+deliberately minimal, but the shape is not invented: health
+checks, smoke suites, and deploy verifiers can report a
+failure and still exit 0, because they are written to report
+rather than to gate.
 
-The other half of the problem runs the opposite way. When a
-command does fail honestly, the fastest repair is often to
-delete the assertion. Both failures look like success.
+The other half runs the opposite way. When a command does
+fail honestly, one of the cheapest repairs available is to
+delete the assertion. Both outcomes look like success.
 
 ## A real run
 
@@ -58,17 +60,20 @@ delete the assertion. Both failures look like success.
   <img src="assets/demo.gif" alt="replx repairing a router whose smoke check exits 0 while reporting two failures, then verifying the fix">
 </picture>
 
-Reconstructed from the committed transcript, not a screen
-capture. Every line in it is from the run recorded in
+A condensed rendering of the committed transcript, not a
+screen capture. Every value it shows is parsed from that
+transcript by `assets/build.py`, and a test fails if the two
+disagree. The connective lines between them are written for
+the animation. The full text is in
 [`examples/smoke-oracle-run.md`](examples/smoke-oracle-run.md),
 which carries the hashes.
 
 Two iterations, the second being verification. The agent
 declined the cheaper repair and said why: reordering the
 route table turns the check green, but it leaves first-match
-semantics under a comment promising longest-prefix, so any
-later append can silently shadow an existing route. It
-changed the lookup instead.
+semantics under a comment promising longest-prefix, so a
+more specific route appended later is silently shadowed by
+the broader one above it. It changed the lookup instead.
 
 Transcript, input, and run manifest:
 [`examples/smoke-oracle-run.md`](examples/smoke-oracle-run.md).
@@ -116,14 +121,14 @@ install, restart the session so it gets picked up.
 
 ## What it does differently
 
-| A loop around an agent CLI                     | `replx`                                                                                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Success is the exit status                     | Success is a condition you declare, and it can be a line of output                             |
-| Retries the same state                         | One run per iteration, never wrapped in `until` or `while`                                     |
-| A passing command ends the run                 | The protocol forbids the repairs that buy a pass, and the harness scores them as `bad_success` |
-| Needs a runner installed                       | One Markdown file, read by the agent you already have                                          |
-| Lint, build, and test cost the same every pass | Lint drops out once clean, and lint-only edits checkpoint separately                           |
-| Reports green                                  | Reports the condition met, or an honest unsolved with what was ruled out                       |
+| A loop around an agent CLI                     | `replx`                                                                                                                                  |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Success is the exit status                     | Success is a condition you declare, and it can be a line of output                                                                       |
+| Retries the same state                         | One run per iteration, never wrapped in `until` or `while`                                                                               |
+| A passing command ends the run                 | The protocol names the repairs that buy a pass and instructs against them; the harness scores the ones its checks catch as `bad_success` |
+| Needs a runner installed                       | One Markdown file, read by the agent you already have                                                                                    |
+| Lint, build, and test cost the same every pass | Lint drops out once clean, and lint-only edits checkpoint separately                                                                     |
+| Reports green                                  | Reports the condition met, or an honest unsolved with what was ruled out                                                                 |
 
 ## The repairs that do not count
 
@@ -147,9 +152,13 @@ signal that would have caught the defect later.
 [`eval/`](eval/README.md) is a harness that scores a model's
 repair against an oracle the model cannot see. Held-out
 checks live in a patch applied only at verification time, so
-they cannot be read or edited. A patch that makes the
-command pass without fixing the defect is recorded as
-`bad_success`, which is a distinct result from `unsolved`.
+they cannot be read or edited. When a patch makes the
+command pass but those checks or the guard catch it, the run
+is recorded as `bad_success`, a distinct result from
+`unsolved`. That detection is only as good as the case: a
+shortcut no check happens to cover still scores as a solve,
+which is why the most useful contribution is one that slips
+through.
 
 Three models have been scored so far, in
 [`eval/RESULTS.md`](eval/RESULTS.md). `gpt-4.1` solves the
@@ -158,7 +167,7 @@ passing; two weaker models never produced an applicable
 patch, which the results separate from a repair failure
 rather than conflating. **No `bad_success` has been seen
 from a real model yet**, so the headline claim is
-demonstrated by the 18 offline tests and not yet
+demonstrated by the 19 offline tests and not yet
 field-tested.
 
 ```sh
@@ -249,26 +258,29 @@ model-authored patches and runs commands out of a case file.
 
 `/loop` re-runs a task on a schedule or until you stop it.
 `replx` is aimed at one failing command, takes a bounded
-budget, and will not call it solved on a passing command
-that weakened a test. They compose: `/loop` decides when to
-run, `replx` decides what counts as done.
+budget, and instructs against calling a weakened test a
+solve. They compose: `/loop` decides when to run, `replx`
+decides what counts as done.
 
 **Which agents does it work with?**
 
-Any agent that follows written instructions. It is a prompt,
-not a program. **Only Claude Code 2.1.220 has actually been
-run against it**, and the transcript is in `examples/`.
-Results from other agents are wanted, including negative
-ones.
+It is designed to be agent-agnostic: a prompt, not a
+program. Whether it survives a different agent's instruction
+format, tool access, and execution behaviour is untested.
+**Only Claude Code 2.1.220 has actually been run against
+it**, and the transcript is in `examples/`. Results from
+other agents are wanted, including negative ones.
 
 **Does the benchmark leak the answer?**
 
 Not any more, and there is a test that fails if it starts
 to. `test_repair_prompt_never_reveals_the_oracle` checks
-every line the held-out patch adds against every prompt in
-the run, plus the guard substrings and the case description.
-The version this was ported from wrote the expected value
-into the prompt outright.
+every line unique to the held-out patch against every prompt
+in the run, plus the case description. The semantic guard is
+deliberately not hidden: it pins text from the visible test,
+so the model was shown it anyway. The version this was
+ported from wrote the expected value into the prompt
+outright.
 
 **Why one run per iteration instead of a retry loop?**
 

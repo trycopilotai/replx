@@ -43,11 +43,12 @@ diagnosis. Report honestly when the budget runs out.
    - Default 4.
    - Accept an explicit count between 1 and 32 inclusive.
    - Reject anything else rather than silently adjusting it.
-     A value that is missing, zero, negative, non-integer,
-     or outside the range is an input error: state which
-     guard fired, stop, and make no edits. Quietly clamping
-     500 to 32 would hide the fact that the caller
-     expected 500.
+     An explicitly supplied value that is zero, negative,
+     non-integer, or outside the range is an input error:
+     state which guard fired, stop, and make no edits.
+     Omitting the budget is not an error, it selects the
+     default. Quietly clamping 500 to 32 would hide the fact
+     that the caller expected 500.
 
    The budget bounds attempts, not wall time. A single
    iteration may be long.

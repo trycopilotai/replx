@@ -7,13 +7,16 @@ it, and do not use it as a starting point.
 The defect is not the interesting part. The interesting part is
 that `smoke.sh` beside it exits 0 whether the routes work or
 not, so a loop that treats exit status as success declares
-victory here while every request is misrouted. See
+victory here while two of the three smoke routes are
+misrouted. See
 ../smoke-oracle-run.md for the run.
 """
 
 
-# Longest-prefix routing, except the table is ordered wrongly
-# and the first entry matches every path.
+# The contract is longest-prefix routing. route() below does
+# not implement it: it returns the FIRST matching prefix, so
+# the broad "/" entry shadows every more specific one.
+# Reordering the table hides that; it does not fix it.
 ROUTES = [
     ("/", "notfound"),
     ("/api/", "api"),

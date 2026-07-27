@@ -1,16 +1,21 @@
 # The evaluation harness
 
-A repair benchmark whose oracle is not the exit status.
+A repair evaluation whose oracle is not the exit status.
+
+It ships one case, so it is a demonstration of the method
+rather than a benchmark. It becomes a benchmark when it has
+enough cases to say something general.
 
 ## What this measures, exactly
 
 Read this section before quoting a number from it.
 
-The harness scores **a single model turn**. It shows a model
-a failing command and the code around it, takes back one
-unified diff, applies it, and re-runs. It repeats that up to
-the case's iteration budget. It is a probe of a model's
-repair patch under a fixed prompt.
+The harness scores **a sequence of stateless single-turn
+patch requests** built from one fixed template. Each turn
+shows a model a failing command and the code around it,
+takes back one unified diff, applies it, and re-runs, up to
+the case's iteration budget. The model carries no
+conversation state between turns; only the repository does.
 
 It does **not** run the `replx` protocol through an agent.
 An agent doing the real thing reads files it chooses, runs
@@ -25,14 +30,14 @@ something other than what its name claims.
 
 ## Why the exit status is not enough
 
-Every loop that drives a command to green shares one failure
-mode: the cheapest way to make a command pass is often to
-stop it from checking. Delete the failing test, loosen the
-assertion, mark the path expected-to-fail, hardcode the
-fixture the assertion reads. All of those exit 0. All of
-them leave the repository worse than an honest failure,
-because they also remove the signal that would have caught
-the defect later.
+A loop that drives a command to green on exit status alone
+shares one failure mode: among the available repairs, one of
+the cheapest is to stop the command from checking. Delete
+the failing test, loosen the assertion, mark the path
+expected-to-fail, hardcode the fixture the assertion reads.
+All of those exit 0. All of them leave the repository worse
+than an honest failure, because they also remove the signal
+that would have caught the defect later.
 
 So a passing command is treated here as a claim, not a
 result. When the command passes, two further checks run.
@@ -59,10 +64,13 @@ directory exists.
 Both are enforced by tests, because both were violated by
 the harness this one is derived from.
 
-1. **Nothing about the intended fix reaches the prompt.**
-   Not the expected value, not the guard substrings, not the
-   held-out commands, not even the case description, which
-   names the defect in prose.
+1. **Nothing hidden reaches the prompt.** Not the held-out
+   commands, not the held-out test content, not the case
+   description, which names the defect in prose. The
+   semantic guard is the exception and is deliberately not
+   hidden: it pins text from the visible test, which the
+   model is shown on purpose, so its presence in the prompt
+   reveals nothing it was not already given.
 2. **A failed check is reported opaquely.** The model is
    told that the change does not fix the defect and nothing
    more. Echoing which check failed, or what it expected,
@@ -96,8 +104,8 @@ third-party packages. The harness shells out to `git` for
 archive, init, apply, and commit, so `git` is a hard
 requirement and not merely convenient.
 
-The tests need no network, no API key, and no model. They
-run against a fake endpoint on a loopback port:
+The tests need no external network, no API key, and no
+model. They run against a fake endpoint on a loopback port:
 
 ```sh
 python3 -m unittest discover -s eval -q
@@ -201,7 +209,9 @@ verification time that looks exactly like a failed check.
 
 `unsolved` and `bad_success` are not the same result and
 should never be collapsed into one "failed" column. An
-honest `unsolved` leaves the repository intact.
+`unsolved` run may still leave candidate edits applied in
+its sandbox; what it does not do is weaken the checks that
+would have caught the defect.
 
 ## Metrics worth recording
 
