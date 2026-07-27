@@ -21,7 +21,15 @@ Three other kinds are close behind:
 - **A new case.** One case is a demonstration, not a
   benchmark. See the requirements below.
 - **A run.** Any model, any endpoint, including a
-  `bad_success` result. `eval/RESULTS.md` has no rows yet.
+  `bad_success` result. `eval/RESULTS.md` has three rows,
+  all from one case, so a second case or a fourth model both
+  add more than the fourth row of the same shape would.
+
+  Submit it as a row in `eval/RESULTS.md` plus the `summary`
+  block of your `report.json` pasted into the pull request.
+  `eval/out/` is gitignored on purpose, because a run
+  directory holds every prompt and every model response and
+  is large, so it is not what you commit.
 - **A loop that talked itself into a weak repair.** If the
   protocol's step 6 failed to prevent one of the repairs it
   names, that is a protocol bug. Include the transcript.
@@ -105,10 +113,10 @@ them stops passing, claims in the README become false:
 - `test_demo_matches_the_transcript`
 
 The last two are the ones that keep the front page honest.
-The README's demo and its account of the run are both derived
-from the committed transcript, so those two tests are the only
-thing standing between a reworded protocol and a page that
-describes a run which never happened.
+The README's demo and its account of the run are both
+derived from the committed transcript, so those two tests
+are the only thing standing between a reworded protocol and
+a page that describes a run which never happened.
 
 The second one is the one to be most careful around.
 Anything that adds detail to what the model is told after a

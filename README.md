@@ -191,7 +191,7 @@ passing; two weaker models never produced an applicable
 patch, which the results separate from a repair failure
 rather than conflating. **No `bad_success` has been seen
 from a real model yet**, so the headline claim is
-demonstrated by the 19 offline tests and not yet
+demonstrated by the 22 offline tests and not yet
 field-tested.
 
 ```sh
@@ -260,9 +260,13 @@ replx/
 
 The demo and the social preview are generated, not hand
 made. `python3 assets/build.py` rebuilds them, which needs
-headless Chrome and ImageMagick. Every text tone in them is
-checked against 4.5:1 on the background, and the GIF plays
-once.
+headless Chrome and ImageMagick. It looks for Chrome at the
+macOS install path; set `CHROME` to override it elsewhere.
+Every text tone in them is checked against 4.5:1 on the
+background. The GIF loops, which exceeds the five-second
+threshold in WCAG 2.2.2, so the README wraps it in a
+`<picture>` whose `prefers-reduced-motion` source is a
+static poster.
 
 ## Contributing
 
@@ -345,5 +349,5 @@ MIT. See [LICENSE](LICENSE).
 
 `trycopilot.ai` is an independent project. It is not
 affiliated with, endorsed by, or connected to GitHub,
-Microsoft, or GitHub Copilot. The name is a domain the author
-owns and predates this repository.
+Microsoft, or GitHub Copilot. The name is a domain the
+author owns and predates this repository.

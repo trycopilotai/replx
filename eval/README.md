@@ -245,9 +245,13 @@ Named so the roadmap is not mistaken for a description:
   an agent, rather than a single model turn.
 - **Comparison against other loop strategies.** Only
   meaningful once the protocol-level harness exists.
-- **CI.** The benchmark is not a merge gate and should not
-  become one until case replay is stable and the bad-success
+- **The benchmark as a merge gate.** CI does exist and runs
+  the offline suite on every pull request. What it does not
+  do is run `probe.py` against a live model, and it should
+  not until case replay is stable and the bad-success
   labelling has been checked against runs a human has read.
+  Scoring a pull request on a sampled model's output would
+  make the merge decision non-deterministic.
 - **More than one case.** One case is a demonstration, not a
   benchmark. Contributions are the point; see
   [CONTRIBUTING.md](../CONTRIBUTING.md).

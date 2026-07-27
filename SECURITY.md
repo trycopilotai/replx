@@ -35,18 +35,29 @@ private. The contents of those files go into the request
 body.
 
 Keys are named, never inlined. `--models` takes the **name
-of an environment variable** that holds the key, so a key
-does not end up in your shell history, in `report.json`, or
-in the saved prompts.
+of an environment variable** that holds the key, so the
+harness never writes it to your shell history, to
+`report.json`, or to a saved prompt.
+
+That is a statement about the harness, not a guarantee about
+the process tree. `case.command` and every `post_check` run
+through a shell that **inherits your whole environment**,
+and their output is put into the next repair prompt and
+saved to the output directory. A case that runs `env` or
+`echo $OPENAI_API_KEY` therefore writes your key to disk and
+sends it to the endpoint, using nothing but the code
+execution a case file already has by design. One more reason
+to read a case file you did not write, and not to run one
+against an endpoint you do not control.
 
 ## The protocol does not stop to ask
 
 `replx` has no confirmation step, and that is a decision
-rather than an oversight. Step 5 diagnoses and edits on every
-iteration without pausing, so a budget of 4 is up to four
-rounds of file edits and command runs with nobody in the
-loop. A loop that asks before each repair is a loop you have
-to sit and watch, which is most of the value gone.
+rather than an oversight. Step 5 diagnoses and edits on
+every iteration without pausing, so a budget of 4 is up to
+four rounds of file edits and command runs with nobody in
+the loop. A loop that asks before each repair is a loop you
+have to sit and watch, which is most of the value gone.
 
 What that costs you:
 
@@ -68,8 +79,8 @@ sandbox, and it is written for a cooperative agent. Do not
 rely on it against a hostile one.
 
 For an unfamiliar repository, the honest setup is a
-disposable checkout and a budget you can afford to have spent
-badly.
+disposable checkout and a budget you can afford to have
+spent badly.
 
 ## The fixture is deliberately broken
 
@@ -91,18 +102,22 @@ on purpose.
   unrelated write action, or leak context, that is a real
   vulnerability in the protocol.
 - **Oracle escape in the harness.** Anything that lets the
-  model under test read the held-out patch, the guard
-  substrings, or the pre-defect code. Three of these existed
-  before the first release and each is now covered by a
-  test. A fourth would be a genuine finding. Note that this
-  class overlaps with `oracle-gap`; file it here if it works
-  by reading the oracle, and as an issue if it works by
-  guessing.
-- **Sandbox escape.** A repair patch or a case command that
-  writes outside the sandbox directory.
+  model under test read the held-out patch, the held-out
+  commands, or the pre-defect code. Not the semantic guard's
+  substrings: those are quoted from a test the model is
+  shown on purpose, so seeing them tells it nothing it was
+  not already given. Three real escapes existed before the
+  first release and each is now covered by a test. A fourth
+  would be a genuine finding. Note that this class overlaps
+  with `oracle-gap`; file it here if it works by reading the
+  oracle, and as an issue if it works by guessing.
+- **Sandbox escape.** A repair patch, a case command, or a
+  `strip_paths` entry that reads, writes, or deletes outside
+  the sandbox directory.
 - **Credential handling.** Any path by which an API key
   reaches `report.json`, a saved prompt, the output
-  directory, or a log.
+  directory, or a log, other than a case command printing it
+  itself, which is documented above.
 - **Harmful guidance.** Anything in the protocol or a
   committed example that would make a reader's system less
   safe if followed.

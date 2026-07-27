@@ -33,6 +33,7 @@ clears 4.5:1. #6e7681 is deliberately absent; it measures
 Needs headless Chrome and ImageMagick.
 """
 
+import os
 import re
 import shutil
 import subprocess
@@ -43,7 +44,10 @@ ASSETS = Path(__file__).resolve().parent
 REPO = ASSETS.parent
 OUT = ASSETS / ".frames"
 TRANSCRIPT = REPO / "examples" / "smoke-oracle-run.md"
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+# Overridable, because the default is a macOS install path and
+# the README documents this command as one anyone can run.
+CHROME = os.environ.get(
+    "CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
 BG = "#0d1117"
 FG = "#e6edf3"
@@ -239,6 +243,10 @@ PREVIEW = """<!doctype html>
 
 
 def shoot(html: str, width: int, height: int, out: Path) -> None:
+    if not Path(CHROME).exists():
+        raise SystemExit(
+            "no Chrome at %s. Set CHROME to your headless-capable "
+            "Chrome or Chromium binary." % CHROME)
     src = out.with_suffix(".html")
     src.write_text(html, encoding="utf-8")
     subprocess.run(

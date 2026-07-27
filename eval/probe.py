@@ -30,9 +30,12 @@ repository than one that honestly gave up.
 
 Two rules protect the oracle, and both are tested:
 
-  1. Nothing about the intended fix appears in the repair
-     prompt. Not the expected value, not the guard, not the
-     held-out commands.
+  1. Nothing hidden appears in the repair prompt. Not the
+     expected value, not the held-out commands, not the case
+     description. The semantic guard is the exception and is
+     deliberately not hidden: it pins text from the test the
+     model is shown on purpose, so its presence reveals
+     nothing the model was not already given.
   2. When a check fails, the model is told only that the
      change does not fix the defect. Echoing the failure
      detail would hand over the answer on the next
@@ -68,7 +71,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
 
 DEFAULT_TIMEOUT_MS = 180000
@@ -370,6 +373,21 @@ def load_case(path: Path) -> ProbeCase:
     strip_paths = string_tuple(raw.get("strip_paths", []))
     if not strip_paths:
         strip_paths = DEFAULT_STRIP_PATHS
+    for entry in strip_paths:
+        # strip_paths is deleted with rmtree and unlink, so an
+        # absolute path or a `..` here is an arbitrary-delete
+        # primitive in a file SECURITY.md already tells you to
+        # treat as untrusted. Rejected at load, before the
+        # sandbox exists and before anything is removed.
+        if PurePosixPath(entry).is_absolute() or entry.startswith("/"):
+            raise ProbeError(
+                "strip_paths entry %r is absolute; it must be relative "
+                "to the sandbox" % entry
+            )
+        if ".." in PurePosixPath(entry).parts:
+            raise ProbeError(
+                "strip_paths entry %r traverses out of the sandbox" % entry
+            )
 
     return ProbeCase(
         case_id=case_id,
@@ -672,8 +690,18 @@ def create_case_sandbox(
     extract_archive(tar_path, sandbox)
     tar_path.unlink(missing_ok=True)
 
+    root = sandbox.resolve()
     for relative in case.strip_paths:
-        target = sandbox / relative
+        target = (sandbox / relative).resolve()
+        # load_case rejects absolute and traversing entries. This
+        # is the second check, after resolution, because the base
+        # ref could have placed a symlink on the path and the
+        # string was innocent.
+        if target != root and root not in target.parents:
+            raise ProbeError(
+                "strip_paths entry %r resolves to %s, outside the sandbox"
+                % (relative, target)
+            )
         if target.is_dir():
             shutil.rmtree(target, ignore_errors=True)
         elif target.exists():

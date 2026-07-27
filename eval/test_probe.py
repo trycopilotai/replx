@@ -777,7 +777,15 @@ class ProbeTest(unittest.TestCase):
 
         # 2. The README and results state the test count in
         #    prose. Compute it rather than trusting either.
-        actual = len([m for m in dir(ProbeTest) if m.startswith("test_")])
+        #    Counting one class was wrong the moment a second
+        #    one existed: the number in the README is what
+        #    `unittest discover` runs, not what ProbeTest holds.
+        actual = sum(
+            len([m for m in dir(cls) if m.startswith("test_")])
+            for cls in globals().values()
+            if isinstance(cls, type) and issubclass(cls, unittest.TestCase)
+            and cls is not unittest.TestCase
+        )
         results = (root / "eval" / "RESULTS.md").read_text(encoding="utf-8")
         for name, text in (("README.md", readme), ("RESULTS.md", results)):
             stated = re.search(r"\b(\d+)\s+(?:offline\s+)?tests\b", text)
@@ -790,7 +798,6 @@ class ProbeTest(unittest.TestCase):
             )
 
         # 3. The README states the iteration count in prose, by
-        #    hand, so it can disagree with the transcript.
         #    hand, so it can disagree with the transcript.
         used = run["iterations"].split("/")[0].strip()
         words = {"1": "one", "2": "two", "3": "three", "4": "four"}
@@ -873,6 +880,60 @@ class ProbeTest(unittest.TestCase):
         self.assertTrue(case.held_out_patch.exists())
         self.assertTrue(case.bug_patch.exists())
         self.assertIn("eval", case.strip_paths)
+
+
+class StripPathTest(unittest.TestCase):
+    """strip_paths is deleted, so it has to be contained.
+
+    SECURITY.md says a case file is untrusted input and that a
+    write outside the sandbox is in scope. These entries are
+    passed to rmtree and unlink, so an absolute path or a `..`
+    was an arbitrary-delete primitive.
+    """
+
+    def _case(self, strip):
+        return {
+            "schema_name": "replx_probe_case",
+            "schema_version": 1,
+            "id": "strip-path-guard",
+            "description": "fixture for the containment tests",
+            "base_ref": "HEAD",
+            "bug_patch": "b.patch",
+            "held_out_patch": "h.patch",
+            "command": "true",
+            "post_checks": ["true"],
+            "max_iterations": 1,
+            "context_files": [],
+            "strip_paths": strip,
+            "models": [],
+        }
+
+    def _write(self, directory, strip):
+        path = Path(directory) / "case.json"
+        path.write_text(json.dumps(self._case(strip)), encoding="utf-8")
+        for name in ("b.patch", "h.patch"):
+            (Path(directory) / name).write_text("", encoding="utf-8")
+        return path
+
+    def test_absolute_strip_path_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, ["/etc/passwd"])
+            with self.assertRaises(PROBE.ProbeError) as caught:
+                PROBE.load_case(path)
+            self.assertIn("absolute", str(caught.exception))
+
+    def test_traversing_strip_path_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, ["../../../victim"])
+            with self.assertRaises(PROBE.ProbeError) as caught:
+                PROBE.load_case(path)
+            self.assertIn("traverses", str(caught.exception))
+
+    def test_ordinary_strip_path_still_loads(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, ["eval/cases"])
+            case = PROBE.load_case(path)
+            self.assertEqual(case.strip_paths, ("eval/cases",))
 
 
 if __name__ == "__main__":
