@@ -308,6 +308,7 @@ def main() -> int:
                    capture_output=True)
     subprocess.run(["magick", str(OUT / ("frame-%02d.png" % len(steps))),
                     "-resize", "%dx%d" % (WIDTH, height),
+                    "-strip",
                     str(ASSETS / "demo-poster.png")], check=True,
                    capture_output=True)
     print("  wrote demo.gif, demo-poster.png, social-preview.png")
