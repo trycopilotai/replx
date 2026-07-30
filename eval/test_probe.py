@@ -825,6 +825,38 @@ class ProbeTest(unittest.TestCase):
                     "the demo replaces content instead of accumulating",
             )
 
+    def test_demo_poster_contains_no_run_timestamp(self) -> None:
+        """Regeneration must not encode its wall-clock time."""
+        png = (ROOT / "assets" / "demo-poster.png").read_bytes()
+        self.assertTrue(
+            png.startswith(b"\x89PNG\r\n\x1a\n"),
+            "demo-poster.png is not a PNG",
+        )
+
+        offset = 8
+        chunk_types = []
+        text_chunks = []
+        while offset < len(png):
+            length = int.from_bytes(png[offset : offset + 4])
+            chunk_type = png[offset + 4 : offset + 8]
+            chunk_data = png[offset + 8 : offset + 8 + length]
+            chunk_types.append(chunk_type)
+            if chunk_type == b"tEXt":
+                text_chunks.append(chunk_data)
+            offset += 12 + length
+
+        self.assertEqual(offset, len(png))
+        self.assertNotIn(
+            b"tIME",
+            chunk_types,
+            "demo-poster.png contains a generation timestamp",
+        )
+        for chunk in text_chunks:
+            self.assertFalse(
+                chunk.startswith(b"date:"),
+                "demo-poster.png contains ImageMagick date metadata",
+            )
+
     def test_transcript_block_matches_its_own_hash(self) -> None:
         """`Edited: No` must be checkable, not just asserted.
 
