@@ -264,7 +264,7 @@ passing; two weaker models never produced an applicable
 patch, which the results separate from a repair failure
 rather than conflating. **No `bad_success` has been seen
 from a real model yet**, so the headline claim is
-demonstrated by the 24 offline tests and not yet
+demonstrated by the 25 offline tests and not yet
 field-tested.
 
 ```sh

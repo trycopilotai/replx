@@ -76,16 +76,15 @@ model that is deleting it.
 
 ## What has been verified
 
-The harness itself, offline, by 24 tests that need no
+The harness itself, offline, by 25 tests that need no
 network and no model:
 
 ```sh
 python3 -m unittest discover -s eval -q
 ```
 
-Captured from a detached worktree of the `v0.3.0` candidate
-on 2026-07-29, with nothing installed beyond python3 and
-git:
+Captured from the repository on 2026-07-29, with nothing
+installed beyond python3 and git:
 
 ```text
 test_dual_product_package_contract                      ok
@@ -93,6 +92,7 @@ test_runtime_pickup_manifests_match_evidence            ok
 test_case_fixtures_stay_strict                         ok
 test_case_metadata_is_stripped_from_the_worktree       ok
 test_demo_matches_the_transcript                       ok
+test_demo_poster_contains_no_run_timestamp             ok
 test_endpoint_failure_is_reported_not_raised           ok
 test_fenced_json_response_is_parsed                    ok
 test_held_out_checks_reject_shortcut_patch             ok
@@ -113,7 +113,7 @@ test_absolute_strip_path_is_rejected                   ok
 test_ordinary_strip_path_still_loads                   ok
 test_traversing_strip_path_is_rejected                 ok
 
-Ran 24 tests in 14.072s
+Ran 25 tests in 13.320s
 OK
 ```
 
