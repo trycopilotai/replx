@@ -63,12 +63,13 @@ diagnosis. Report honestly when the budget runs out.
      default, and for most commands it is the right answer.
      Take it and move on.
    - **Semantic.** A statement about the run that no exit
-     status expresses: `no build warnings`, `the migration
-     runs twice with the same result`, `the page loads with
-     an empty console`. Say what you will check to decide
-     it, and say it before the first iteration. A condition
-     you cannot check is a budget spent for nothing, so if
-     you cannot make one checkable, say that and stop.
+     status expresses: `no build warnings`,
+     `the migration runs twice with the same result`,
+     `the page loads with an empty console`. Say what you
+     will check to decide it, and say it before the first
+     iteration. A condition you cannot check is a budget
+     spent for nothing, so if you cannot make one checkable,
+     say that and stop.
    - **Mechanical, where the exit status is not telling the
      truth.** Many health checks, smoke suites, and
      deployment verifiers exit 0 while printing a failure.

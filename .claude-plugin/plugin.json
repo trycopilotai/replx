@@ -1,6 +1,6 @@
 {
   "name": "replx",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Drive a failing command to a declared success condition in bounded iterations, diagnosing and fixing between attempts.",
   "author": {
     "name": "trycopilot.ai"
@@ -13,5 +13,6 @@
     "ralph-wiggum",
     "program-repair",
     "benchmark"
-  ]
+  ],
+  "skills": "./skills/"
 }

@@ -1,4 +1,7 @@
 interface:
   display_name: "replx"
-  short_description: "Repair commands to a declared success state"
-  default_prompt: "Use $replx to repair this failing command to the declared success condition."
+  short_description:
+    "Repair commands to a declared success state"
+  default_prompt:
+    "Use $replx to repair this failing command to the
+    declared success condition."

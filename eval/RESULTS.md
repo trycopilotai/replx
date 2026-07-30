@@ -120,16 +120,16 @@ OK
 Eight of those tests are load-bearing, in the sense that the
 harness's claims are false if any of them stops passing:
 
-| Test                                                  | What it establishes                                                                                                                                                             |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `test_held_out_checks_reject_shortcut_patch`          | A patch that makes the command exit 0 without fixing the defect is recorded as `bad_success`, and the held-out check fails on its own assertion rather than on an import error. |
+| Test                                                  | What it establishes                                                                                                                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `test_held_out_checks_reject_shortcut_patch`          | A patch that makes the command exit 0 without fixing the defect is recorded as `bad_success`, and the held-out check fails on its own assertion rather than on an import error.            |
 | `test_repair_prompt_never_reveals_the_oracle`         | Every line unique to the held-out patch is absent from every prompt of the run, along with the guard mechanics and the case description. The guard's own substrings are visible by design. |
-| `test_case_metadata_is_stripped_from_the_worktree`    | `case.json` and the held-out patch are gone from the sandbox before the model reads anything, and no file in the sandbox contains the held-out content.                         |
-| `test_sandbox_has_no_history_to_read_the_answer_from` | The sandbox has exactly one commit and no parent, and the pre-defect code appears in no object git can reach from it.                                                           |
-| `test_shipped_case_runs_end_to_end`                   | The committed `bug.patch`, `held-out.patch`, and `case.json` work together against this repository, so a case edited without re-verification fails here.                        |
-| `test_run_manifest_matches_the_shipped_protocol`      | The transcript in `examples/` cites the sha256 of the protocol actually on disk, so reformatting the protocol cannot silently invalidate the run it documents.                  |
-| `test_transcript_block_matches_its_own_hash`          | The block between the rules in the committed transcript hashes to the value its own manifest cites, so a formatter run cannot silently falsify the `Edited: No` claim.          |
-| `test_demo_matches_the_transcript`                    | The animation's frames accumulate rather than replace, `assets/build.py` hard-codes no run values, and the stated test and iteration counts match reality.                      |
+| `test_case_metadata_is_stripped_from_the_worktree`    | `case.json` and the held-out patch are gone from the sandbox before the model reads anything, and no file in the sandbox contains the held-out content.                                    |
+| `test_sandbox_has_no_history_to_read_the_answer_from` | The sandbox has exactly one commit and no parent, and the pre-defect code appears in no object git can reach from it.                                                                      |
+| `test_shipped_case_runs_end_to_end`                   | The committed `bug.patch`, `held-out.patch`, and `case.json` work together against this repository, so a case edited without re-verification fails here.                                   |
+| `test_run_manifest_matches_the_shipped_protocol`      | The transcript in `examples/` cites the source commit and sha256 of the exact historical protocol blob that produced it, so later formatting cannot rewrite the run's evidence.            |
+| `test_transcript_block_matches_its_own_hash`          | The block between the rules in the committed transcript hashes to the value its own manifest cites, so a formatter run cannot silently falsify the `Edited: No` claim.                     |
+| `test_demo_matches_the_transcript`                    | The animation's frames accumulate rather than replace, `assets/build.py` hard-codes no run values, and the stated test and iteration counts match reality.                                 |
 
 Those tests are evidence that **the measuring instrument
 works**. The table above is evidence about three models.

@@ -49,7 +49,7 @@ the protocol rather than about the router:
 | Field         | Value                                                                   |
 | ------------- | ----------------------------------------------------------------------- |
 | Input         | `examples/smoke-oracle/` at repo commit `3942666`                       |
-| Protocol      | `skill/SKILL.md`, sha256 `7c885fd38801e3d0…`                            |
+| Protocol      | `skill/SKILL.md` at repo commit `71a9451745ccdcc01e23b8209489e4e2ab41c802`, sha256 `7c885fd38801e3d0…` |
 | Agent         | Claude Code 2.1.220                                                     |
 | Invocation    | `cat prompt.txt \| npx @anthropic-ai/claude-code --dangerously-skip-permissions -p` |
 | Prompt        | protocol verbatim, then the invocation line, sha256 `935b98e4f93d0354…` |
@@ -60,9 +60,9 @@ the protocol rather than about the router:
 Both hashes are checked mechanically:
 `test_transcript_block_matches_its_own_hash` recomputes the
 block below and `test_run_manifest_matches_the_shipped_protocol`
-recomputes the protocol, so neither claim can go stale
-silently. This file is exempt from the formatter for the same
-reason.
+recomputes the protocol from the recorded repository commit,
+so neither claim can go stale silently. This file is exempt
+from the formatter for the same reason.
 
 Model sampling means a rerun will not be byte-identical. It
 should still derive the command from the goal and refuse to

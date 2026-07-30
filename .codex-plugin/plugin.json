@@ -1,6 +1,6 @@
 {
   "name": "replx",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Drive a failing command to a declared success condition in bounded iterations, diagnosing and fixing between attempts.",
   "author": {
     "name": "trycopilot.ai"
@@ -28,7 +28,7 @@
     ],
     "websiteURL": "https://github.com/trycopilotai/replx",
     "defaultPrompt": [
-      "Repair this failing command to the declared success condition."
+      "Use $replx to repair this failing command to the declared success condition."
     ]
   }
 }

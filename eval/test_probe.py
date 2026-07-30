@@ -692,40 +692,55 @@ class ProbeTest(unittest.TestCase):
         self.assertFalse(result["guard_failed"])
 
     def test_run_manifest_matches_the_shipped_protocol(self) -> None:
-        """The committed transcript must cite the live protocol.
+        """The transcript must cite the protocol bytes it used.
 
         A transcript's manifest is the only thing making it
         checkable rather than decorative, and a manifest goes
-        stale the moment the protocol is reformatted. Editing
-        prose is a normal thing to do; noticing that it
-        invalidated a hash four files away is not, so this
-        asserts it instead of relying on anyone remembering.
+        stale if its source commit or hash stops naming the
+        protocol that produced it. The live protocol may be
+        formatted later, so the evidence stays attached to the
+        exact historical blob rather than being rewritten.
         """
         import hashlib
         import re
 
         root = Path(__file__).resolve().parent.parent
-        protocol = root / "skill" / "SKILL.md"
         transcript = root / "examples" / "smoke-oracle-run.md"
-
-        actual = hashlib.sha256(protocol.read_bytes()).hexdigest()
         text = transcript.read_text(encoding="utf-8")
 
         cited = re.search(
-            r"`skill/SKILL\.md`,\s*sha256\s*`([0-9a-f]+)", text
+            r"`skill/SKILL\.md` at repo commit "
+            r"`([0-9a-f]{40})`,\s*sha256\s*`([0-9a-f]+)",
+            text,
         )
         self.assertIsNotNone(
-            cited, "the run manifest does not cite a protocol sha256"
+            cited,
+            "the run manifest does not cite a protocol commit "
+            "and sha256",
         )
         assert cited is not None
-        prefix = cited.group(1)
+        source_commit = cited.group(1)
+        prefix = cited.group(2)
+        protocol = subprocess.run(
+            [
+                "git",
+                "show",
+                source_commit + ":skill/SKILL.md",
+            ],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        ).stdout
+        actual = hashlib.sha256(protocol).hexdigest()
         self.assertTrue(
             actual.startswith(prefix),
-            "run manifest is stale: it cites %s… but skill/SKILL.md "
-            "hashes to %s…. Re-run the example against the current "
-            "protocol and update the manifest; do not just edit the "
-            "hash, because the transcript claims to be unedited output "
-            "of the protocol it names." % (prefix, actual[: len(prefix)]),
+            "run manifest is stale: it cites %s… but "
+            "%s:skill/SKILL.md hashes to %s…."
+            % (
+                prefix,
+                source_commit,
+                actual[: len(prefix)],
+            ),
         )
 
     def test_demo_matches_the_transcript(self) -> None:
@@ -928,17 +943,22 @@ class IntegrationContractTest(unittest.TestCase):
         self.assertFalse(canonical_skill.is_symlink())
         self.assertTrue(openai_yaml.is_file())
         self.assertFalse(openai_yaml.is_symlink())
+        default_prompt = (
+            "Use $replx to repair this failing command to the "
+            "declared success condition."
+        )
+        expected_openai_yaml = (
+            "interface:\n"
+            '  display_name: "replx"\n'
+            "  short_description:\n"
+            '    "Repair commands to a declared success state"\n'
+            "  default_prompt:\n"
+            '    "Use $replx to repair this failing command to the\n'
+            '    declared success condition."\n'
+        )
         self.assertEqual(
             openai_yaml.read_text(encoding="utf-8"),
-            (
-                "interface:\n"
-                '  display_name: "replx"\n'
-                "  short_description: "
-                '"Repair commands to a declared success state"\n'
-                "  default_prompt: "
-                '"Use $replx to repair this failing command to '
-                'the declared success condition."\n'
-            ),
+            expected_openai_yaml,
         )
 
         self.assertTrue(compatibility_path.is_symlink())
@@ -974,15 +994,38 @@ class IntegrationContractTest(unittest.TestCase):
         for field in shared_fields:
             self.assertEqual(claude[field], codex[field])
         self.assertEqual(claude["name"], "replx")
-        self.assertEqual(claude["version"], "0.3.0")
+        self.assertEqual(claude["version"], "0.3.1")
+        self.assertEqual(claude["skills"], "./skills/")
         self.assertEqual(codex["skills"], "./skills/")
+        self.assertEqual(
+            codex["interface"]["defaultPrompt"],
+            [default_prompt],
+        )
 
         readme = (ROOT / "README.md").read_text(
             encoding="utf-8"
         )
         self.assertIn("### Claude Code", readme)
         self.assertIn("### Codex", readme)
-        self.assertIn("--branch v0.3.0", readme)
+        self.assertEqual(readme.count("--branch v0.3.1"), 2)
+        self.assertNotIn("--branch v0.3.0", readme)
+        self.assertIn(
+            "https://github.com/trycopilotai/skills.git"
+            "#v0.3.0",
+            readme,
+        )
+        self.assertIn(
+            "trycopilotai/skills --ref v0.3.0",
+            readme,
+        )
+        self.assertNotIn(
+            "trycopilotai/skills --ref main",
+            readme,
+        )
+        self.assertIn(
+            "The `v0.3.1` tagged repository carries",
+            readme,
+        )
         self.assertIn("/replx", readme)
         self.assertIn("/replx:replx", readme)
         self.assertIn("$replx", readme)
@@ -1010,18 +1053,6 @@ class IntegrationContractTest(unittest.TestCase):
             )
             manifests[runtime] = manifest
 
-            for key in ("protocol", "interface", "result"):
-                record = manifest[key]
-                path = ROOT / record["path"]
-                actual = hashlib.sha256(path.read_bytes()).hexdigest()
-                self.assertEqual(record["sha256"], actual)
-
-            self.assertEqual(
-                manifest["result"]["kind"],
-                "output-last-message",
-            )
-            self.assertFalse(manifest["result"]["edited"])
-
             for key in ("protocol", "interface"):
                 record = manifest[key]
                 command = [
@@ -1035,10 +1066,23 @@ class IntegrationContractTest(unittest.TestCase):
                     check=True,
                     capture_output=True,
                 ).stdout
-                self.assertEqual(
-                    committed,
-                    (ROOT / record["path"]).read_bytes(),
-                )
+                actual = hashlib.sha256(committed).hexdigest()
+                self.assertEqual(record["sha256"], actual)
+
+            self.assertEqual(
+                manifest["result"]["kind"],
+                "output-last-message",
+            )
+            self.assertFalse(manifest["result"]["edited"])
+            result_record = manifest["result"]
+            result_path = ROOT / result_record["path"]
+            actual_result = hashlib.sha256(
+                result_path.read_bytes()
+            ).hexdigest()
+            self.assertEqual(
+                result_record["sha256"],
+                actual_result,
+            )
 
         self.assertEqual(
             manifests["codex"]["agent"],

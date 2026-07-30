@@ -126,7 +126,7 @@ rollback_install() {
   fi
 }
 trap rollback_install EXIT
-git clone --quiet --depth 1 --branch v0.3.0 \
+git clone --quiet --depth 1 --branch v0.3.1 \
   https://github.com/trycopilotai/replx "$install_tmp/replx"
 mkdir -p "$install_tmp/package"
 cp -R "$install_tmp/replx/skill/." "$install_tmp/package/"
@@ -142,7 +142,7 @@ Or from the marketplace, alongside the other
 [trycopilot.ai skills](https://github.com/trycopilotai/skills):
 
 ```text
-/plugin marketplace add trycopilotai/skills
+/plugin marketplace add https://github.com/trycopilotai/skills.git#v0.3.0
 /plugin install replx@trycopilotai
 ```
 
@@ -173,7 +173,7 @@ rollback_install() {
   fi
 }
 trap rollback_install EXIT
-git clone --quiet --depth 1 --branch v0.3.0 \
+git clone --quiet --depth 1 --branch v0.3.1 \
   https://github.com/trycopilotai/replx "$install_tmp/replx"
 mkdir -p "$install_tmp/package"
 cp -R "$install_tmp/replx/skill/." "$install_tmp/package/"
@@ -189,7 +189,7 @@ Or install it from the trycopilot.ai marketplace:
 
 ```sh
 npx -y @openai/codex plugin marketplace add \
-  trycopilotai/skills --ref main
+  trycopilotai/skills --ref v0.3.0
 npx -y @openai/codex plugin add \
   replx@trycopilotai
 ```
@@ -202,7 +202,7 @@ $replx make build
 $replx the service is reachable and returns HTML
 ```
 
-The `v0.3.0` tagged repository carries Claude Code and Codex
+The `v0.3.1` tagged repository carries Claude Code and Codex
 plugin manifests. Both runtimes load the canonical skill
 package under `skills/replx`; `skill/SKILL.md` resolves to
 that package, so the skill content is stored once.

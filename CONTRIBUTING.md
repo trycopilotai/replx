@@ -30,6 +30,7 @@ Three other kinds are close behind:
   `eval/out/` is gitignored on purpose, because a run
   directory holds every prompt and every model response and
   is large, so it is not what you commit.
+
 - **A loop that talked itself into a weak repair.** If the
   protocol's step 6 failed to prevent one of the repairs it
   names, that is a protocol bug. Include the transcript.
@@ -114,9 +115,10 @@ them stops passing, claims in the README become false:
 
 The last two are the ones that keep the front page honest.
 The README's demo and its account of the run are both
-derived from the committed transcript, so those two tests
-are the only thing standing between a reworded protocol and
-a page that describes a run which never happened.
+derived from the committed transcript. The manifest test
+keeps that transcript tied to the exact historical protocol
+blob that produced it, even after the live protocol is
+formatted or changed.
 
 The second one is the one to be most careful around.
 Anything that adds detail to what the model is told after a
