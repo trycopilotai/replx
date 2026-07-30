@@ -963,6 +963,53 @@ class IntegrationContractTest(unittest.TestCase):
             readme,
         )
 
+    def test_codex_run_manifest_matches_evidence(self) -> None:
+        import hashlib
+
+        manifest_path = (
+            ROOT
+            / "examples"
+            / "codex-smoke-run.manifest.gpt.json"
+        )
+        manifest = json.loads(
+            manifest_path.read_text(encoding="utf-8")
+        )
+
+        for key in ("protocol", "interface", "result"):
+            record = manifest[key]
+            path = ROOT / record["path"]
+            actual = hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(record["sha256"], actual)
+
+        self.assertEqual(
+            manifest["agent"],
+            {
+                "product": "Codex CLI",
+                "version": "0.146.0",
+                "model": "gpt-5.6-sol",
+            },
+        )
+        self.assertEqual(
+            manifest["result"]["kind"],
+            "output-last-message",
+        )
+        self.assertFalse(manifest["result"]["edited"])
+
+        for key in ("protocol", "interface"):
+            record = manifest[key]
+            command = [
+                "git",
+                "show",
+                manifest["input_commit"] + ":" + record["path"],
+            ]
+            committed = subprocess.run(
+                command,
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+            ).stdout
+            self.assertEqual(committed, (ROOT / record["path"]).read_bytes())
+
 
 class StripPathTest(unittest.TestCase):
     """strip_paths is deleted, so it has to be contained.

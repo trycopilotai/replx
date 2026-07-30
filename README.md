@@ -263,7 +263,7 @@ passing; two weaker models never produced an applicable
 patch, which the results separate from a repair failure
 rather than conflating. **No `bad_success` has been seen
 from a real model yet**, so the headline claim is
-demonstrated by the 23 offline tests and not yet
+demonstrated by the 24 offline tests and not yet
 field-tested.
 
 ```sh
@@ -368,11 +368,11 @@ decides what counts as done.
 **Which agents does it work with?**
 
 It is designed to be agent-agnostic: a prompt, not a
-program. Whether it survives a different agent's instruction
-format, tool access, and execution behaviour is untested.
-**Only Claude Code 2.1.220 has actually been run against
-it**, and the transcript is in `examples/`. Results from
-other agents are wanted, including negative ones.
+program. Claude Code 2.1.220 and Codex CLI 0.146.0 have
+actually picked it up and run it. The Claude Code transcript
+and the Codex final run record, with their manifests, are in
+[`examples/`](examples/). Results from other agents are
+wanted, including negative ones.
 
 **Does the benchmark leak the answer?**
 

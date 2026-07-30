@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "date": "2026-07-29",
+  "input_commit": "69f31f2b9f35b102f2ddb50de6d44028c6be49f6",
+  "protocol": {
+    "path": "skills/replx/SKILL.md",
+    "sha256": "7c885fd38801e3d0d84879c9ddc46730e975ea5116ea4e7783f58712fc577e61"
+  },
+  "interface": {
+    "path": "skills/replx/agents/openai.yaml",
+    "sha256": "34c665d25aecdd220f73aa4d04f5c06e1017899a19368b09bd7e3bfe8237c965"
+  },
+  "agent": {
+    "product": "Codex CLI",
+    "version": "0.146.0",
+    "model": "gpt-5.6-sol"
+  },
+  "invocation": "$replx Run python3 -m unittest discover -s eval -q in this repository. Treat a passing test suite as the success condition. Do not modify files unless the command fails and a repair is required.",
+  "result": {
+    "path": "examples/codex-smoke-run.gpt.md",
+    "sha256": "68234b14074f2c90e41cbec0b973611402e6cd61589c2320b7db7abfe6bb2830",
+    "kind": "output-last-message",
+    "edited": false
+  }
+}
