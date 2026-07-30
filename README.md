@@ -338,11 +338,13 @@ The demo and the social preview are generated, not hand
 made. `python3 assets/build.py` rebuilds them, which needs
 headless Chrome and ImageMagick. It looks for Chrome at the
 macOS install path; set `CHROME` to override it elsewhere.
-Every text tone in them is checked against 4.5:1 on the
-background. The GIF loops, which exceeds the five-second
-threshold in WCAG 2.2.2, so the README wraps it in a
-`<picture>` whose `prefers-reduced-motion` source is a
-static poster.
+`python3 assets/check_rebuild.gpt.py` rebuilds all three
+images in a copied checkout and fails unless every output is
+byte-identical to the committed asset. Every text tone in
+them is checked against 4.5:1 on the background. The GIF
+loops, which exceeds the five-second threshold in WCAG
+2.2.2, so the README wraps it in a `<picture>` whose
+`prefers-reduced-motion` source is a static poster.
 
 ## Contributing
 
