@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "date": "2026-07-29",
+  "input_commit": "4f4a3609c0116e6dfc40ddb0c79731c76bb5aa53",
+  "protocol": {
+    "path": "skills/replx/SKILL.md",
+    "sha256": "7c885fd38801e3d0d84879c9ddc46730e975ea5116ea4e7783f58712fc577e61"
+  },
+  "interface": {
+    "path": "skills/replx/agents/openai.yaml",
+    "sha256": "34c665d25aecdd220f73aa4d04f5c06e1017899a19368b09bd7e3bfe8237c965"
+  },
+  "agent": {
+    "product": "Claude Code",
+    "version": "2.1.220",
+    "model": "claude-haiku-4-5-20251001"
+  },
+  "invocation": "/replx Run python3 -m unittest discover -s eval -q in this repository. Treat a passing test suite as the success condition. Do not modify files unless the command fails and a repair is required.",
+  "pickup": {
+    "install_location": "~/.claude/skills/replx",
+    "command_name": "/replx",
+    "attribution_skill": "replx"
+  },
+  "result": {
+    "path": "examples/claude-code-smoke-run.gpt.md",
+    "sha256": "7e247b7d5cfaa5ca0f6bc631e0684bbea6b1e14a1449ed414ce2a3d743422ace",
+    "kind": "output-last-message",
+    "edited": false
+  }
+}

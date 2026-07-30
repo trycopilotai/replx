@@ -83,11 +83,13 @@ network and no model:
 python3 -m unittest discover -s eval -q
 ```
 
-Captured from a clean clone on 2026-07-27, with nothing
-installed beyond python3 and git:
+Captured from a detached worktree of the `v0.3.0` candidate
+on 2026-07-29, with nothing installed beyond python3 and
+git:
 
 ```text
-test_absolute_strip_path_is_rejected                   ok
+test_dual_product_package_contract                      ok
+test_runtime_pickup_manifests_match_evidence            ok
 test_case_fixtures_stay_strict                         ok
 test_case_metadata_is_stripped_from_the_worktree       ok
 test_demo_matches_the_transcript                       ok
@@ -98,7 +100,6 @@ test_invalid_json_response_is_recorded                 ok
 test_invalid_unified_diff_is_recorded                  ok
 test_max_iteration_failure_is_recorded                 ok
 test_miscounted_hunk_header_still_applies              ok
-test_ordinary_strip_path_still_loads                   ok
 test_post_checks_without_a_held_out_patch_is_rejected  ok
 test_repair_prompt_never_reveals_the_oracle            ok
 test_run_manifest_matches_the_shipped_protocol         ok
@@ -108,9 +109,11 @@ test_shipped_case_loads_and_declares_held_out_checks   ok
 test_shipped_case_runs_end_to_end                      ok
 test_successful_one_iteration_patch                    ok
 test_transcript_block_matches_its_own_hash             ok
+test_absolute_strip_path_is_rejected                   ok
+test_ordinary_strip_path_still_loads                   ok
 test_traversing_strip_path_is_rejected                 ok
 
-Ran 22 tests in 14.675s
+Ran 24 tests in 14.072s
 OK
 ```
 

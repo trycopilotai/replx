@@ -963,26 +963,53 @@ class IntegrationContractTest(unittest.TestCase):
             readme,
         )
 
-    def test_codex_run_manifest_matches_evidence(self) -> None:
+    def test_runtime_pickup_manifests_match_evidence(self) -> None:
         import hashlib
 
-        manifest_path = (
-            ROOT
-            / "examples"
-            / "codex-smoke-run.manifest.gpt.json"
-        )
-        manifest = json.loads(
-            manifest_path.read_text(encoding="utf-8")
-        )
+        manifests = {}
+        for runtime in ("claude-code", "codex"):
+            manifest_path = (
+                ROOT
+                / "examples"
+                / (runtime + "-smoke-run.manifest.gpt.json")
+            )
+            manifest = json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )
+            manifests[runtime] = manifest
 
-        for key in ("protocol", "interface", "result"):
-            record = manifest[key]
-            path = ROOT / record["path"]
-            actual = hashlib.sha256(path.read_bytes()).hexdigest()
-            self.assertEqual(record["sha256"], actual)
+            for key in ("protocol", "interface", "result"):
+                record = manifest[key]
+                path = ROOT / record["path"]
+                actual = hashlib.sha256(path.read_bytes()).hexdigest()
+                self.assertEqual(record["sha256"], actual)
+
+            self.assertEqual(
+                manifest["result"]["kind"],
+                "output-last-message",
+            )
+            self.assertFalse(manifest["result"]["edited"])
+
+            for key in ("protocol", "interface"):
+                record = manifest[key]
+                command = [
+                    "git",
+                    "show",
+                    manifest["input_commit"] + ":" + record["path"],
+                ]
+                committed = subprocess.run(
+                    command,
+                    cwd=ROOT,
+                    check=True,
+                    capture_output=True,
+                ).stdout
+                self.assertEqual(
+                    committed,
+                    (ROOT / record["path"]).read_bytes(),
+                )
 
         self.assertEqual(
-            manifest["agent"],
+            manifests["codex"]["agent"],
             {
                 "product": "Codex CLI",
                 "version": "0.146.0",
@@ -990,25 +1017,34 @@ class IntegrationContractTest(unittest.TestCase):
             },
         )
         self.assertEqual(
-            manifest["result"]["kind"],
-            "output-last-message",
+            manifests["claude-code"]["agent"],
+            {
+                "product": "Claude Code",
+                "version": "2.1.220",
+                "model": "claude-haiku-4-5-20251001",
+            },
         )
-        self.assertFalse(manifest["result"]["edited"])
-
-        for key in ("protocol", "interface"):
-            record = manifest[key]
-            command = [
-                "git",
-                "show",
-                manifest["input_commit"] + ":" + record["path"],
-            ]
-            committed = subprocess.run(
-                command,
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-            ).stdout
-            self.assertEqual(committed, (ROOT / record["path"]).read_bytes())
+        self.assertEqual(
+            manifests["claude-code"]["pickup"],
+            {
+                "install_location": "~/.claude/skills/replx",
+                "command_name": "/replx",
+                "attribution_skill": "replx",
+            },
+        )
+        self.assertEqual(
+            manifests["codex"]["pickup"],
+            {
+                "install_location": "~/.agents/skills/replx",
+                "invocation_token": "$replx",
+                "protocol_sha256": manifests["codex"]["protocol"][
+                    "sha256"
+                ],
+                "interface_sha256": manifests["codex"]["interface"][
+                    "sha256"
+                ],
+            },
+        )
 
 
 class StripPathTest(unittest.TestCase):
