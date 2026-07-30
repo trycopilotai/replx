@@ -1,0 +1,17 @@
+{
+  "name": "replx",
+  "version": "0.3.0",
+  "description": "Drive a failing command to a declared success condition in bounded iterations, diagnosing and fixing between attempts.",
+  "author": {
+    "name": "trycopilot.ai"
+  },
+  "homepage": "https://github.com/trycopilotai/replx",
+  "repository": "https://github.com/trycopilotai/replx",
+  "license": "MIT",
+  "keywords": [
+    "repair-loop",
+    "ralph-wiggum",
+    "program-repair",
+    "benchmark"
+  ]
+}

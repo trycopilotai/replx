@@ -36,6 +36,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).with_name("probe.py")
+ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("replx_probe", MODULE_PATH)
 assert SPEC is not None
 assert SPEC.loader is not None
@@ -880,6 +881,87 @@ class ProbeTest(unittest.TestCase):
         self.assertTrue(case.held_out_patch.exists())
         self.assertTrue(case.bug_patch.exists())
         self.assertIn("eval", case.strip_paths)
+
+
+class IntegrationContractTest(unittest.TestCase):
+    def test_dual_product_package_contract(self) -> None:
+        package = ROOT / "skills" / "replx"
+        canonical_skill = package / "SKILL.md"
+        openai_yaml = package / "agents" / "openai.yaml"
+        compatibility_path = ROOT / "skill"
+
+        self.assertTrue(package.is_dir())
+        self.assertFalse(package.is_symlink())
+        self.assertTrue(canonical_skill.is_file())
+        self.assertFalse(canonical_skill.is_symlink())
+        self.assertTrue(openai_yaml.is_file())
+        self.assertFalse(openai_yaml.is_symlink())
+        self.assertEqual(
+            openai_yaml.read_text(encoding="utf-8"),
+            (
+                "interface:\n"
+                '  display_name: "replx"\n'
+                "  short_description: "
+                '"Repair commands to a declared success state"\n'
+                "  default_prompt: "
+                '"Use $replx to repair this failing command to '
+                'the declared success condition."\n'
+            ),
+        )
+
+        self.assertTrue(compatibility_path.is_symlink())
+        self.assertEqual(
+            compatibility_path.readlink(),
+            Path("skills/replx"),
+        )
+        self.assertEqual(
+            compatibility_path.resolve(),
+            package.resolve(),
+        )
+
+        claude = json.loads(
+            (ROOT / ".claude-plugin/plugin.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        codex = json.loads(
+            (ROOT / ".codex-plugin/plugin.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        shared_fields = (
+            "name",
+            "version",
+            "description",
+            "author",
+            "homepage",
+            "repository",
+            "license",
+            "keywords",
+        )
+        for field in shared_fields:
+            self.assertEqual(claude[field], codex[field])
+        self.assertEqual(claude["name"], "replx")
+        self.assertEqual(claude["version"], "0.3.0")
+        self.assertEqual(codex["skills"], "./skills/")
+
+        readme = (ROOT / "README.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("### Claude Code", readme)
+        self.assertIn("### Codex", readme)
+        self.assertIn("--branch v0.3.0", readme)
+        self.assertIn("/replx", readme)
+        self.assertIn("/replx:replx", readme)
+        self.assertIn("$replx", readme)
+        self.assertIn(
+            "npx -y @openai/codex plugin marketplace add",
+            readme,
+        )
+        self.assertIn(
+            "replx@trycopilotai",
+            readme,
+        )
 
 
 class StripPathTest(unittest.TestCase):

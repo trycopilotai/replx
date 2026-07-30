@@ -108,15 +108,34 @@ Paste [`skill/SKILL.md`](skill/SKILL.md) into your agent as
 the instructions, then give it a failing command. That is
 the whole contract.
 
-As a Claude Code skill:
+### Claude Code
+
+Install the tagged skill package:
 
 ```sh
-D=$(mktemp -d) \
-  && git clone --quiet --depth 1 --branch v0.2.0 \
-       https://github.com/trycopilotai/replx "$D/replx" \
-  && mkdir -p ~/.claude/skills/replx \
-  && cp "$D/replx/skill/SKILL.md" ~/.claude/skills/replx/ \
-  && rm -rf "$D"
+set -eu
+install_parent="$HOME/.claude/skills"
+install_target="$install_parent/replx"
+mkdir -p "$install_parent"
+install_tmp="$(mktemp -d "$install_parent/.replx.XXXXXX")"
+rollback_install() {
+  if [ ! -e "$install_target" ]; then
+    if [ -e "$install_tmp/previous" ]; then
+      mv "$install_tmp/previous" "$install_target"
+    fi
+  fi
+}
+trap rollback_install EXIT
+git clone --quiet --depth 1 --branch v0.3.0 \
+  https://github.com/trycopilotai/replx "$install_tmp/replx"
+mkdir -p "$install_tmp/package"
+cp -R "$install_tmp/replx/skill/." "$install_tmp/package/"
+if [ -e "$install_target" ]; then
+  mv "$install_target" "$install_tmp/previous"
+fi
+mv "$install_tmp/package" "$install_target"
+trap - EXIT
+rm -rf "$install_tmp"
 ```
 
 Or from the marketplace, alongside the other
@@ -127,18 +146,71 @@ Or from the marketplace, alongside the other
 /plugin install replx@trycopilotai
 ```
 
-The clone is pinned to a tag rather than to `main`. This
-file is an instruction set that steers an agent, so a
-mutable branch would silently change what your loop is told
-to do. Read `SKILL.md` before you invoke it.
-
-Then invoke it by name, with either a command or an end
-state:
+Invoke the directly installed skill as `/replx`, or the
+marketplace plugin as `/replx:replx`, with either a command
+or an end state:
 
 ```text
 /replx make build
 /replx the service is reachable and returns HTML
 ```
+
+### Codex
+
+Install the same tagged skill package:
+
+```sh
+set -eu
+install_parent="$HOME/.agents/skills"
+install_target="$install_parent/replx"
+mkdir -p "$install_parent"
+install_tmp="$(mktemp -d "$install_parent/.replx.XXXXXX")"
+rollback_install() {
+  if [ ! -e "$install_target" ]; then
+    if [ -e "$install_tmp/previous" ]; then
+      mv "$install_tmp/previous" "$install_target"
+    fi
+  fi
+}
+trap rollback_install EXIT
+git clone --quiet --depth 1 --branch v0.3.0 \
+  https://github.com/trycopilotai/replx "$install_tmp/replx"
+mkdir -p "$install_tmp/package"
+cp -R "$install_tmp/replx/skill/." "$install_tmp/package/"
+if [ -e "$install_target" ]; then
+  mv "$install_target" "$install_tmp/previous"
+fi
+mv "$install_tmp/package" "$install_target"
+trap - EXIT
+rm -rf "$install_tmp"
+```
+
+Or install it from the trycopilot.ai marketplace:
+
+```sh
+npx -y @openai/codex plugin marketplace add \
+  trycopilotai/skills --ref main
+npx -y @openai/codex plugin add \
+  replx@trycopilotai
+```
+
+Invoke either Codex installation with a command or an end
+state:
+
+```text
+$replx make build
+$replx the service is reachable and returns HTML
+```
+
+The `v0.3.0` package carries Claude Code and Codex plugin
+manifests. `skill/SKILL.md` resolves to the package both
+runtimes load under `skills/replx`, so the skill content is
+stored once.
+
+The clone is pinned to a tag rather than to `main`. This
+file is an instruction set that steers an agent, so a
+mutable branch would silently change what your loop is told
+to do. Read `SKILL.md` before you invoke it.
 
 If the skills directory did not exist before you ran the
 install, restart the session so it gets picked up.
@@ -150,7 +222,7 @@ install, restart the session so it gets picked up.
 | Success is the exit status                     | Success is a condition you declare, and it can be stated in prose rather than measured by the command             |
 | Retries the same state                         | One run per iteration, never wrapped in `until` or `while`                                                                               |
 | A passing command ends the run                 | The protocol names the repairs that buy a pass and instructs against them; the harness scores the ones its checks catch as `bad_success` |
-| Needs a runner installed                       | One Markdown file, read by the agent you already have                                                                                    |
+| Needs a runner installed                       | One complete skill package, read by the agent you already have                                                                           |
 | Lint, build, and test cost the same every pass | Lint drops out once clean, and lint-only edits checkpoint separately                                                                     |
 | Reports green                                  | Reports the condition met, or an honest unsolved with what was ruled out                                                                 |
 
@@ -191,7 +263,7 @@ passing; two weaker models never produced an applicable
 patch, which the results separate from a repair failure
 rather than conflating. **No `bad_success` has been seen
 from a real model yet**, so the headline claim is
-demonstrated by the 22 offline tests and not yet
+demonstrated by the 23 offline tests and not yet
 field-tested.
 
 ```sh
@@ -215,15 +287,15 @@ named and described by
 who put it as plainly as it deserves: "Ralph is a bash
 loop."
 
-The space is well populated. Star counts as of 2026-07-26:
+The space is well populated. Star counts as of 2026-07-29:
 
 - [`mikeyobrien/ralph-orchestrator`](https://github.com/mikeyobrien/ralph-orchestrator),
-  3,075 stars, actively maintained, and the only one of
+  3,076 stars, actively maintained, and the only one of
   these with a benchmark directory.
 - [`michaelshimeles/ralphy`](https://github.com/michaelshimeles/ralphy),
-  2,948 stars.
+  2,955 stars.
 - [`fstandhartinger/ralph-wiggum`](https://github.com/fstandhartinger/ralph-wiggum),
-  277 stars, and
+  280 stars, and
   [`soderlind/ralph`](https://github.com/soderlind/ralph), 89.
 - Claude Code ships a built-in `/loop`.
 
@@ -252,7 +324,10 @@ can send.
 
 ```text
 replx/
-  skill/SKILL.md        the protocol
+  skill -> skills/replx compatibility path
+  skills/replx/         the complete skill package
+    SKILL.md            the protocol
+    agents/openai.yaml  Codex interface metadata
   examples/             the fixture and a real run with its manifest
   eval/                 the harness, its cases, and its results
   assets/               logo and demo, regenerate with build.py
