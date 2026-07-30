@@ -130,11 +130,19 @@ def read_transcript() -> dict:
         r"^- \*{0,2}Success condition\*{0,2}:\*{0,2}\s*(.+?)(?=\n- )",
         text, re.S | re.M)
 
+    condition_text = ""
+    if condition:
+        condition_text = " ".join(condition.group(1).split())
+
+    budget_text = ""
+    if budget:
+        budget_text = budget.group(1).strip()
+
     return {
         "target": header.group(1).strip(),
         "before": console.group(1).rstrip("\n").splitlines(),
-        "condition": " ".join(condition.group(1).split()) if condition else "",
-        "budget": budget.group(1).strip() if budget else "",
+        "condition": condition_text,
+        "budget": budget_text,
         "i1_result": field("Iteration 1", "Result"),
         "i1_fix": field("Iteration 1", "Fix"),
         "i2_result": field("Iteration 2", "Result"),
@@ -282,7 +290,10 @@ def main() -> int:
     # than slides changing, with a long hold on the outcome.
     args = ["magick"]
     for index in range(1, len(steps) + 1):
-        args += ["-delay", "150" if index == len(steps) else "48",
+        delay = "48"
+        if index == len(steps):
+            delay = "150"
+        args += ["-delay", delay,
                  str(OUT / ("frame-%02d.png" % index))]
     args += ["-resize", "%dx%d" % (WIDTH, height), "-colors", "64",
              "-layers", "Optimize", str(OUT / "raw.gif")]
