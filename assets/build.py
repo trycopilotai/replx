@@ -250,7 +250,13 @@ PREVIEW = """<!doctype html>
 """
 
 
-def shoot(html: str, width: int, height: int, out: Path) -> None:
+def shoot(
+    html: str,
+    width: int,
+    height: int,
+    scale_factor: int,
+    out: Path,
+) -> None:
     if not Path(CHROME).exists():
         raise SystemExit(
             "no Chrome at %s. Set CHROME to your headless-capable "
@@ -259,7 +265,8 @@ def shoot(html: str, width: int, height: int, out: Path) -> None:
     src.write_text(html, encoding="utf-8")
     subprocess.run(
         [CHROME, "--headless", "--disable-gpu", "--hide-scrollbars",
-         "--force-device-scale-factor=2", "--screenshot=" + str(out),
+         "--force-device-scale-factor=%d" % scale_factor,
+         "--screenshot=" + str(out),
          "--window-size=%d,%d" % (width, height), "file://" + str(src)],
         check=True, capture_output=True)
     src.unlink()
@@ -280,11 +287,17 @@ def main() -> int:
         html = SHELL.format(bg=BG, fg=FG, dim=DIM, green=GREEN, red=RED,
                             amber=AMBER, blue=BLUE, font=FONT,
                             w=WIDTH, h=height, body="\n".join(body))
-        shoot(html, WIDTH, height, OUT / ("frame-%02d.png" % index))
+        shoot(
+            html,
+            WIDTH,
+            height,
+            2,
+            OUT / ("frame-%02d.png" % index),
+        )
 
     shoot(PREVIEW.format(bg=BG, fg=FG, dim=DIM, amber=AMBER, font=FONT,
                          headline=esc(read_headline())),
-          1280, 640, ASSETS / "social-preview.png")
+          1280, 640, 1, ASSETS / "social-preview.png")
 
     # Short even delays so it reads as output arriving rather
     # than slides changing, with a long hold on the outcome.

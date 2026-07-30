@@ -18,6 +18,23 @@ GENERATED = (
     "assets/demo-poster.png",
     "assets/social-preview.png",
 )
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+SOCIAL_PREVIEW_SIZE = (1280, 640)
+
+
+def png_size(path: Path) -> tuple[int, int]:
+    """Read a PNG's dimensions from its IHDR chunk."""
+    payload = path.read_bytes()
+    if len(payload) < 24:
+        raise ValueError("truncated PNG: " + str(path))
+    if payload[:8] != PNG_SIGNATURE:
+        raise ValueError("invalid PNG signature: " + str(path))
+    if payload[12:16] != b"IHDR":
+        raise ValueError("missing PNG IHDR: " + str(path))
+    return (
+        int.from_bytes(payload[16:20], "big"),
+        int.from_bytes(payload[20:24], "big"),
+    )
 
 
 def main() -> int:
@@ -43,6 +60,22 @@ def main() -> int:
             print(result.stdout, end="")
             print(result.stderr, end="", file=sys.stderr)
             return result.returncode
+
+        preview_size = png_size(
+            copy / "assets/social-preview.png",
+        )
+        if preview_size != SOCIAL_PREVIEW_SIZE:
+            print(
+                "social preview size is %dx%d; expected %dx%d"
+                % (
+                    preview_size[0],
+                    preview_size[1],
+                    SOCIAL_PREVIEW_SIZE[0],
+                    SOCIAL_PREVIEW_SIZE[1],
+                ),
+                file=sys.stderr,
+            )
+            return 1
 
         drifted = []
         for relative in GENERATED:
