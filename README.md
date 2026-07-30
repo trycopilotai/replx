@@ -202,11 +202,10 @@ $replx make build
 $replx the service is reachable and returns HTML
 ```
 
-The `v0.3.0` tagged repository carries Claude Code and
-Codex plugin manifests. Both runtimes load the canonical
-skill package under `skills/replx`; `skill/SKILL.md`
-resolves to that package, so the skill content is stored
-once.
+The `v0.3.0` tagged repository carries Claude Code and Codex
+plugin manifests. Both runtimes load the canonical skill
+package under `skills/replx`; `skill/SKILL.md` resolves to
+that package, so the skill content is stored once.
 
 The clone is pinned to a tag rather than to `main`. This
 file is an instruction set that steers an agent, so a
@@ -220,7 +219,7 @@ install, restart the session so it gets picked up.
 
 | A loop around an agent CLI                     | `replx`                                                                                                                                  |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Success is the exit status                     | Success is a condition you declare, and it can be stated in prose rather than measured by the command             |
+| Success is the exit status                     | Success is a condition you declare, and it can be stated in prose rather than measured by the command                                    |
 | Retries the same state                         | One run per iteration, never wrapped in `until` or `while`                                                                               |
 | A passing command ends the run                 | The protocol names the repairs that buy a pass and instructs against them; the harness scores the ones its checks catch as `bad_success` |
 | Needs a runner installed                       | One complete skill package, read by the agent you already have                                                                           |
@@ -375,7 +374,8 @@ program. Claude Code 2.1.220 and Codex CLI 0.146.0 have
 actually picked it up from their direct skill directories
 and run it through `/replx` and `$replx`. The retained
 [Claude Code final output](examples/claude-code-smoke-run.gpt.md)
-and [Codex final run record](examples/codex-smoke-run.gpt.md)
+and
+[Codex final run record](examples/codex-smoke-run.gpt.md)
 have pinned manifests beside them. Results from other agents
 are wanted, including negative ones.
 
