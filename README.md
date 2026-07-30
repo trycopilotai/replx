@@ -410,9 +410,9 @@ before declaring success.
 **Why is it called `replx` when it is not a REPL?**
 
 The `x` is execution: it runs your command, reads the
-failure, and edits. The name predates this repository. Note
-that the PyPI package `replx` is an unrelated MicroPython
-tool, and `replxx` is an unrelated readline library.
+failure, and edits. The PyPI package `replx` is an unrelated
+MicroPython tool, and `replxx` is an unrelated readline
+library.
 
 **Is a bounded budget not just giving up early?**
 
@@ -429,5 +429,4 @@ MIT. See [LICENSE](LICENSE).
 
 `trycopilot.ai` is an independent project. It is not
 affiliated with, endorsed by, or connected to GitHub,
-Microsoft, or GitHub Copilot. The name is a domain the
-author owns and predates this repository.
+Microsoft, or GitHub Copilot.
