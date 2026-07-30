@@ -73,7 +73,7 @@ What that costs you:
   into, not from the protocol. An agent running with
   approvals turned off has approvals turned off here too.
 
-Step 6 constrains *what kind* of repair counts, not what the
+Step 6 constrains _what kind_ of repair counts, not what the
 agent is permitted to touch. It is a quality bar, not a
 sandbox, and it is written for a cooperative agent. Do not
 rely on it against a hostile one.

@@ -1,7 +1,7 @@
 # The evaluation harness
 
-A repair evaluation whose oracle is declared up front,
-not inferred from the exit status.
+A repair evaluation whose oracle is declared up front, not
+inferred from the exit status.
 
 It ships one case, so it is a demonstration of the method
 rather than a benchmark. It becomes a benchmark when it has
