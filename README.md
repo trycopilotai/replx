@@ -427,6 +427,6 @@ MIT license. See [LICENSE](LICENSE).
 
 ## Not affiliated with GitHub
 
-`trycopilot.ai` is an independent project. It is not
+`trycopilot.ai LLC` is an independent project. It is not
 affiliated with, endorsed by, or connected to GitHub,
 Microsoft, or GitHub Copilot.
