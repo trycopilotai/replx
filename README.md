@@ -7,7 +7,7 @@
 <p align="center"><strong>A semantic repair loop that actually fixes code.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license">
+  <img src="https://img.shields.io/badge/-MIT%20license-blue.svg" alt="MIT license">
   <img src="https://img.shields.io/badge/protocol-no%20dependencies-brightgreen.svg" alt="The protocol has no dependencies">
   <img src="https://img.shields.io/badge/protocol-one%20markdown%20file-blue.svg" alt="The protocol is one Markdown file">
   <img src="https://img.shields.io/badge/success-mechanical%20or%20semantic-8957e5.svg" alt="Success conditions can be mechanical or semantic">
@@ -423,7 +423,7 @@ out, which is information you can act on.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT license. See [LICENSE](LICENSE).
 
 ## Not affiliated with GitHub
 
