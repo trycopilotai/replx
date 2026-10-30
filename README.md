@@ -13,6 +13,14 @@
   <img src="https://img.shields.io/badge/success-mechanical%20or%20semantic-8957e5.svg" alt="Success conditions can be mechanical or semantic">
 </p>
 
+<div align="center">
+
+[![auto-lint-pr](https://github.com/trycopilotai/replx/actions/workflows/auto-lint-pr.yml/badge.svg)](https://github.com/trycopilotai/replx/actions/workflows/auto-lint-pr.yml)
+[![check](https://github.com/trycopilotai/replx/actions/workflows/check.yml/badge.svg)](https://github.com/trycopilotai/replx/actions/workflows/check.yml)
+[![lint](https://github.com/trycopilotai/replx/actions/workflows/lint.yml/badge.svg)](https://github.com/trycopilotai/replx/actions/workflows/lint.yml)
+
+</div>
+
 `replx` drives a failing command to green in bounded
 iterations, one attempt per iteration, each with a fresh
 diagnosis. That part is not new.
