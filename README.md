@@ -6,12 +6,7 @@
 
 <p align="center"><strong>A semantic repair loop that actually fixes code.</strong></p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/-MIT%20license-blue.svg" alt="MIT license">
-  <img src="https://img.shields.io/badge/protocol-no%20dependencies-brightgreen.svg" alt="The protocol has no dependencies">
-  <img src="https://img.shields.io/badge/protocol-one%20markdown%20file-blue.svg" alt="The protocol is one Markdown file">
-  <img src="https://img.shields.io/badge/success-mechanical%20or%20semantic-8957e5.svg" alt="Success conditions can be mechanical or semantic">
-</p>
+---
 
 <div align="center">
 
@@ -20,6 +15,15 @@
 [![lint](https://github.com/trycopilotai/replx/actions/workflows/lint.yml/badge.svg)](https://github.com/trycopilotai/replx/actions/workflows/lint.yml)
 
 </div>
+
+---
+
+<p align="center">
+  <img src="https://img.shields.io/badge/-MIT%20license-blue.svg" alt="MIT license">
+  <img src="https://img.shields.io/badge/protocol-no%20dependencies-brightgreen.svg" alt="The protocol has no dependencies">
+  <img src="https://img.shields.io/badge/protocol-one%20markdown%20file-blue.svg" alt="The protocol is one Markdown file">
+  <img src="https://img.shields.io/badge/success-mechanical%20or%20semantic-8957e5.svg" alt="Success conditions can be mechanical or semantic">
+</p>
 
 `replx` drives a failing command to green in bounded
 iterations, one attempt per iteration, each with a fresh
